@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import type { UseResizeObserverReturn } from '@vueuse/core';
+import type { SetupContext, VNodeArrayChildren } from 'vue';
 
 import type {
   MenuItemClicked,
@@ -8,6 +9,10 @@ import type {
   MenuProvider,
 } from '../types';
 
+import { useNamespace } from '@vben-core/composables';
+import { Ellipsis } from '@vben-core/icons';
+import { isHttpUrl } from '@vben-core/shared/utils';
+import { useResizeObserver } from '@vueuse/core';
 import {
   computed,
   nextTick,
@@ -15,16 +20,9 @@ import {
   ref,
   toRef,
   useSlots,
-  type VNodeArrayChildren,
   watch,
   watchEffect,
 } from 'vue';
-
-import { useNamespace } from '@vben-core/composables';
-import { Ellipsis } from '@vben-core/icons';
-import { isHttpUrl } from '@vben-core/shared/utils';
-
-import { useResizeObserver } from '@vueuse/core';
 
 import {
   createMenuContext,
@@ -54,7 +52,7 @@ const emit = defineEmits<{
 
 const { b, is } = useNamespace('menu');
 const menuStyle = useMenuStyle();
-const slots = useSlots();
+const slots: SetupContext['slots'] = useSlots();
 const menu = ref<HTMLUListElement>();
 const sliceIndex = ref(-1);
 const openedMenus = ref<MenuProvider['openedMenus']>(
@@ -332,6 +330,7 @@ function removeMenuItem(item: MenuItemRegistered) {
       is(theme, true),
       is('rounded', rounded),
       is('collapse', collapse),
+      is('menu-align', mode === 'horizontal'),
     ]"
     :style="menuStyle"
     role="menu"
@@ -421,6 +420,10 @@ $namespace: vben;
   text-overflow: ellipsis;
   white-space: nowrap;
   opacity: 1;
+}
+
+.is-menu-align {
+  justify-content: var(--menu-align, start);
 }
 
 .#{$namespace}-menu__popup-container,
