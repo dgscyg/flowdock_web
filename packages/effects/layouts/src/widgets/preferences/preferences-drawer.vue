@@ -4,6 +4,7 @@ import type {
   BreadcrumbStyleType,
   BuiltinThemeType,
   ContentCompactType,
+  LayoutHeaderMenuAlignType,
   LayoutHeaderModeType,
   LayoutType,
   NavigationStyleType,
@@ -11,8 +12,6 @@ import type {
   ThemeModeType,
 } from '@vben/types';
 import type { SegmentedItem } from '@vben-core/shadcn-ui';
-
-import { computed, ref } from 'vue';
 
 import { Copy, RotateCw } from '@vben/icons';
 import { $t, loadLocaleMessages } from '@vben/locales';
@@ -29,8 +28,8 @@ import {
   VbenSegmented,
 } from '@vben-core/shadcn-ui';
 import { globalShareState } from '@vben-core/shared/global-state';
-
 import { useClipboard } from '@vueuse/core';
+import { computed, ref } from 'vue';
 
 import {
   Animation,
@@ -94,6 +93,8 @@ const SidebarExpandOnHover = defineModel<boolean>('sidebarExpandOnHover');
 
 const headerEnable = defineModel<boolean>('headerEnable');
 const headerMode = defineModel<LayoutHeaderModeType>('headerMode');
+const headerMenuAlign =
+  defineModel<LayoutHeaderMenuAlignType>('headerMenuAlign');
 
 const breadcrumbEnable = defineModel<boolean>('breadcrumbEnable');
 const breadcrumbShowIcon = defineModel<boolean>('breadcrumbShowIcon');
@@ -111,6 +112,9 @@ const tabbarPersist = defineModel<boolean>('tabbarPersist');
 const tabbarDraggable = defineModel<boolean>('tabbarDraggable');
 const tabbarWheelable = defineModel<boolean>('tabbarWheelable');
 const tabbarStyleType = defineModel<string>('tabbarStyleType');
+const tabbarMiddleClickToClose = defineModel<boolean>(
+  'tabbarMiddleClickToClose',
+);
 
 const navigationStyleType = defineModel<NavigationStyleType>(
   'navigationStyleType',
@@ -159,6 +163,7 @@ const {
   isDark,
   isFullContent,
   isHeaderNav,
+  isHeaderSidebarNav,
   isMixedNav,
   isSideMixedNav,
   isSideMode,
@@ -317,6 +322,7 @@ async function handleReset() {
             <Block :title="$t('preferences.header.title')">
               <Header
                 v-model:header-enable="headerEnable"
+                v-model:header-menu-align="headerMenuAlign"
                 v-model:header-mode="headerMode"
                 :disabled="isFullContent"
               />
@@ -340,7 +346,8 @@ async function handleReset() {
                 v-model:breadcrumb-show-icon="breadcrumbShowIcon"
                 v-model:breadcrumb-style-type="breadcrumbStyleType"
                 :disabled="
-                  !showBreadcrumbConfig || !(isSideNav || isSideMixedNav)
+                  !showBreadcrumbConfig ||
+                  !(isSideNav || isSideMixedNav || isHeaderSidebarNav)
                 "
               />
             </Block>
@@ -354,6 +361,7 @@ async function handleReset() {
                 v-model:tabbar-show-more="tabbarShowMore"
                 v-model:tabbar-style-type="tabbarStyleType"
                 v-model:tabbar-wheelable="tabbarWheelable"
+                v-model:tabbar-middle-click-to-close="tabbarMiddleClickToClose"
               />
             </Block>
             <Block :title="$t('preferences.widget.title')">
