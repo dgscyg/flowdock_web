@@ -21,11 +21,17 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: Use Node.js ${{ matrix.node-version }}
+    - name: 安装 pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 9.15.0
+    - name: 使用 Nnode.js ${{ matrix.node-version }}
       uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-    - run: npm ci
-    - run: npm run build --if-present
-    - run: npm test
+        cache: 'pnpm'
+    - run: corepack enable
+    - name: 安装依赖
+      run: pnpm install
+    - run: pnpm run build
+    - run: pnpm test
