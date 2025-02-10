@@ -13,9 +13,12 @@ const logo = computed(() => preferences.logo.source);
 <template>
   <AuthPageLayout
     :app-name="appName"
+    :copyright="false"
     :logo="logo"
     :page-description="$t('authentication.pageDesc')"
     :page-title="$t('authentication.pageTitle')"
+    :toolbar="true"
+    :toolbar-list="['color', 'language', 'layout', 'theme']"
   >
     <!-- 自定义工具栏 -->
     <!-- <template #toolbar></template> -->
