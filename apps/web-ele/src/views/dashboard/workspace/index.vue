@@ -10,7 +10,6 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 
 import {
-  AnalysisChartCard,
   WorkbenchHeader,
   WorkbenchProject,
   WorkbenchQuickNav,
@@ -21,7 +20,7 @@ import { preferences } from '@vben/preferences';
 import { useUserStore } from '@vben/stores';
 import { openWindow } from '@vben/utils';
 
-import AnalyticsVisitsSource from '../analytics/analytics-visits-source.vue';
+import WeatherCard from './weather-card.vue';
 
 const userStore = useUserStore();
 
@@ -237,11 +236,17 @@ function navTo(nav: WorkbenchProjectItem | WorkbenchQuickNavItem) {
   <div class="p-5">
     <WorkbenchHeader
       :avatar="userStore.userInfo?.avatar || preferences.app.defaultAvatar"
+      class="flex items-center"
     >
       <template #title>
-        早安, {{ userStore.userInfo?.realName }}, 开始您一天的工作吧！
+        <div class="flex w-full items-center">
+          <h2 class="text-lg font-medium">
+            早安, {{ userStore.userInfo?.realName }}, 开始您一天的工作吧！
+          </h2>
+          <WeatherCard class="ml-auto w-[300px]" />
+        </div>
       </template>
-      <template #description> 今日晴，20℃ - 32℃！ </template>
+      <template #description></template>
     </WorkbenchHeader>
 
     <div class="mt-5 flex flex-col lg:flex-row">
@@ -257,9 +262,9 @@ function navTo(nav: WorkbenchProjectItem | WorkbenchQuickNavItem) {
           @click="navTo"
         />
         <WorkbenchTodo :items="todoItems" class="mt-5" title="待办事项" />
-        <AnalysisChartCard class="mt-5" title="访问来源">
+        <!-- <AnalysisChartCard class="mt-5" title="访问来源">
           <AnalyticsVisitsSource />
-        </AnalysisChartCard>
+        </AnalysisChartCard> -->
       </div>
     </div>
   </div>
