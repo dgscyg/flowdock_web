@@ -11,6 +11,12 @@ interface WeatherData {
   lastUpdate: string;
 }
 
+interface Location {
+  lat: string;
+  lon: string;
+  city: string;
+}
+
 const weatherData = ref<WeatherData>({
   temp: '--',
   text: '加载中...',
@@ -22,13 +28,49 @@ const weatherData = ref<WeatherData>({
 const loading = ref(true);
 const error = ref('');
 
+const location = ref<Location>({
+  lat: '',
+  lon: '',
+  city: '',
+});
+
+async function getLocationByIP() {
+  try {
+    const response = await fetch('http://ip-api.com/json/?lang=zh-CN');
+    const data = await response.json();
+    if (data.status === 'success') {
+      location.value = {
+        lat: data.lat.toFixed(2),
+        lon: data.lon.toFixed(2),
+        city: data.city,
+      };
+      return true;
+    }
+    return false;
+  } catch (error_) {
+    console.error('获取位置信息失败:', error_);
+    return false;
+  }
+}
+
 async function fetchWeatherData() {
   try {
     loading.value = true;
     error.value = '';
-    // 使用和风天气API，这里使用免费的测试key，实际使用时需要替换为自己的key
+
+    // 先获取位置信息
+    const hasLocation = await getLocationByIP();
+    if (!hasLocation) {
+      // 降级使用北京
+      location.value = {
+        lat: '39.90',
+        lon: '116.40',
+        city: '北京市',
+      };
+    }
+
     const response = await fetch(
-      'https://devapi.qweather.com/v7/weather/now?location=101010100&key=9828c7f11c4f40139f98c9d5847b986c',
+      `https://devapi.qweather.com/v7/weather/now?location=${location.value.lon},${location.value.lat}&key=9828c7f11c4f40139f98c9d5847b986c`,
     );
     const data = await response.json();
 
@@ -37,14 +79,15 @@ async function fetchWeatherData() {
         temp: `${data.now.temp}°C`,
         text: data.now.text,
         icon: data.now.icon,
-        city: '北京市', // 这里可以通过IP定位或用户选择来设置城市
+        city: location.value.city,
         lastUpdate: new Date().toLocaleTimeString(),
       };
     } else {
       error.value = '获取天气数据失败';
     }
-  } catch {
+  } catch (error_) {
     error.value = '网络请求失败';
+    console.error(error_);
   } finally {
     loading.value = false;
   }

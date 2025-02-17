@@ -24,6 +24,18 @@ import WeatherCard from './weather-card.vue';
 
 const userStore = useUserStore();
 
+// 获取时间问候语
+function getGreeting() {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour < 12) {
+    return '早安';
+  } else if (hour >= 12 && hour < 18) {
+    return '下午好';
+  } else {
+    return '晚上好';
+  }
+}
+
 // 这是一个示例数据，实际项目中需要根据实际情况进行调整
 // url 也可以是内部路由，在 navTo 方法中识别处理，进行内部跳转
 // 例如：url: /dashboard/workspace
@@ -241,9 +253,11 @@ function navTo(nav: WorkbenchProjectItem | WorkbenchQuickNavItem) {
       <template #title>
         <div class="flex w-full items-center">
           <h2 class="text-lg font-medium">
-            早安, {{ userStore.userInfo?.realName }}, 开始您一天的工作吧！
+            {{ getGreeting() }}, {{ userStore.userInfo?.realName }},
+            开始您一天的工作吧！
           </h2>
-          <WeatherCard class="ml-auto w-[300px]" />
+          <p class="ml-6 w-[800px]"></p>
+          <WeatherCard class="ml-4 w-[300px]" />
         </div>
       </template>
       <template #description></template>
