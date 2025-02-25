@@ -70,7 +70,7 @@ async function fetchWeatherData() {
     }
 
     const response = await fetch(
-      `https://devapi.qweather.com/v7/weather/now?location=${location.value.lon},${location.value.lat}&key=9828c7f11c4f40139f98c9d5847b986c`,
+      `https://devapi.qweather.com/v7/weather/now?location=${location.value.lon},${location.value.lat}&key=9828c7f11c4f40139f98c9d5847b986c`
     );
     const data = await response.json();
 
@@ -120,17 +120,18 @@ onUnmounted(() => {
             <span class="temperature">{{ weatherData.temp }}</span>
             <span class="weather-text">{{ weatherData.text }}</span>
           </div>
+
           <div class="weather-details">
             <div class="city">{{ weatherData.city }}</div>
+
             <div class="update-time text-xs text-gray-500">
               更新时间：{{ weatherData.lastUpdate }}
             </div>
           </div>
         </div>
       </template>
-      <div v-else class="error-message">
-        {{ error }}
-      </div>
+      <div v-else class="error-message">{{ error }}</div>
+
       <div v-if="loading" class="loading-overlay">
         <div class="loading-spinner"></div>
       </div>

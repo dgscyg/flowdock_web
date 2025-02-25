@@ -70,7 +70,7 @@ const formSchema = computed((): VbenFormSchema[] => {
                 class: 'vben-link ml-1 ',
                 href: '',
               },
-              `${$t('authentication.privacyPolicy')} & ${$t('authentication.terms')}`,
+              `${$t('authentication.privacyPolicy')} & ${$t('authentication.terms')}`
             ),
           ]),
       }),
@@ -88,9 +88,5 @@ function handleSubmit(value: Recordable<any>) {
 </script>
 
 <template>
-  <AuthenticationRegister
-    :form-schema="formSchema"
-    :loading="loading"
-    @submit="handleSubmit"
-  />
+  <AuthenticationRegister :form-schema="formSchema" :loading="loading" @submit="handleSubmit" />
 </template>
