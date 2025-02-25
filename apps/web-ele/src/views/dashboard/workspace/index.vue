@@ -120,7 +120,7 @@ const quickNavItems: WorkbenchQuickNavItem[] = [
     color: '#3fb27f',
     icon: 'ion:settings-outline',
     title: '系统管理',
-    url: '/demos/features/login-expired', // 这里的 URL 是示例，实际项目中需要根据实际情况进行调整
+    url: '/system/index', // 这里的 URL 是示例，实际项目中需要根据实际情况进行调整
   },
   {
     color: '#4daf1bc9',
@@ -243,38 +243,30 @@ function navTo(nav: WorkbenchProjectItem | WorkbenchQuickNavItem) {
   }
 }
 </script>
-
+<WeatherCard class="ml-auto w-[300px]" />
 <template>
   <div class="p-5">
-    <WorkbenchHeader
-      :avatar="userStore.userInfo?.avatar || preferences.app.defaultAvatar"
-      class="flex items-center"
-    >
+    <WorkbenchHeader :avatar="userStore.userInfo?.avatar || preferences.app.defaultAvatar" class="flex items-center">
       <template #title>
         <div class="flex w-full items-center">
           <h2 class="text-lg font-medium">
-            {{ getGreeting() }}, {{ userStore.userInfo?.realName }},
-            开始您一天的工作吧！
+            {{ getGreeting() }}, {{ userStore.userInfo?.realName }}, 开始您一天的工作吧！
           </h2>
+
           <p class="ml-6 w-[800px]"></p>
           <WeatherCard class="ml-4 w-[300px]" />
         </div>
       </template>
       <template #description></template>
     </WorkbenchHeader>
-
     <div class="mt-5 flex flex-col lg:flex-row">
       <div class="mr-4 w-full lg:w-3/5">
         <WorkbenchProject :items="projectItems" title="项目" @click="navTo" />
         <WorkbenchTrends :items="trendItems" class="mt-5" title="最新动态" />
       </div>
+
       <div class="w-full lg:w-2/5">
-        <WorkbenchQuickNav
-          :items="quickNavItems"
-          class="mt-5 lg:mt-0"
-          title="快捷导航"
-          @click="navTo"
-        />
+        <WorkbenchQuickNav :items="quickNavItems" class="mt-5 lg:mt-0" title="快捷导航" @click="navTo" />
         <WorkbenchTodo :items="todoItems" class="mt-5" title="待办事项" />
         <!-- <AnalysisChartCard class="mt-5" title="访问来源">
           <AnalyticsVisitsSource />

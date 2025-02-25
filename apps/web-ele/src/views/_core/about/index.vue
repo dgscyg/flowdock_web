@@ -4,6 +4,4 @@ import { About } from '@vben/common-ui';
 defineOptions({ name: 'About' });
 </script>
 
-<template>
-  <About />
-</template>
+<template><About /></template>

@@ -2,6 +2,4 @@
 import { Fallback } from '@vben/common-ui';
 </script>
 
-<template>
-  <Fallback status="coming-soon" />
-</template>
+<template><Fallback status="coming-soon" /></template>
