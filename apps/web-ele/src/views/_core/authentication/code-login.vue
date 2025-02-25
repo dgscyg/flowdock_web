@@ -61,9 +61,5 @@ async function handleLogin(values: Recordable<any>) {
 </script>
 
 <template>
-  <AuthenticationCodeLogin
-    :form-schema="formSchema"
-    :loading="loading"
-    @submit="handleLogin"
-  />
+  <AuthenticationCodeLogin :form-schema="formSchema" :loading="loading" @submit="handleLogin" />
 </template>

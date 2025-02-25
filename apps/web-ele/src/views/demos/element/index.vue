@@ -30,9 +30,7 @@ function warning() {
   ElMessage.warning('How many roads must a man walk down');
 }
 function success() {
-  ElMessage.success(
-    'Cause you walked hand in hand With another man in my place',
-  );
+  ElMessage.success('Cause you walked hand in hand With another man in my place');
 }
 
 function notify(type: NotificationType) {
@@ -57,21 +55,15 @@ const segmentedOptions = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 </script>
 
 <template>
-  <Page
-    description="支持多语言，主题功能集成切换等"
-    title="Element Plus组件使用演示"
-  >
+  <Page description="支持多语言，主题功能集成切换等" title="Element Plus组件使用演示">
     <div class="flex flex-wrap gap-5">
       <ElCard class="mb-5 w-auto">
         <template #header> 按钮 </template>
         <ElSpace>
-          <ElButton text>Text</ElButton>
-          <ElButton>Default</ElButton>
-          <ElButton type="primary"> Primary </ElButton>
-          <ElButton type="info"> Info </ElButton>
+          <ElButton text>Text</ElButton> <ElButton>Default</ElButton>
+          <ElButton type="primary"> Primary </ElButton> <ElButton type="info"> Info </ElButton>
           <ElButton type="success"> Success </ElButton>
-          <ElButton type="warning"> Warning </ElButton>
-          <ElButton type="danger"> Error </ElButton>
+          <ElButton type="warning"> Warning </ElButton> <ElButton type="danger"> Error </ElButton>
         </ElSpace>
       </ElCard>
       <ElCard class="mb-5 w-80">
@@ -94,17 +86,11 @@ const segmentedOptions = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
       </ElCard>
       <ElCard class="mb-5 w-auto">
         <template #header> Segmented </template>
-        <ElSegmented
-          v-model="segmentedValue"
-          :options="segmentedOptions"
-          size="large"
-        />
+        <ElSegmented v-model="segmentedValue" :options="segmentedOptions" size="large" />
       </ElCard>
       <ElCard class="mb-5 w-80">
         <template #header> V-Loading </template>
-        <div class="flex size-72 items-center justify-center" v-loading="true">
-          一些演示的内容
-        </div>
+        <div class="flex size-72 items-center justify-center" v-loading="true">一些演示的内容</div>
       </ElCard>
       <ElCard class="mb-5 w-80">
         <ElTable :data="tableData" stripe>

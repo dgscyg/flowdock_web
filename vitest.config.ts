@@ -8,4 +8,7 @@ export default defineConfig({
     environment: 'happy-dom',
     exclude: [...configDefaults.exclude, '**/e2e/**'],
   },
+  optimizeDeps: {
+    exclude: ['@element-plus/icons-vue']
+  },
 });

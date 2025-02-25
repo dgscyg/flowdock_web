@@ -109,9 +109,7 @@ const [Form, formApi] = useVbenForm({
       renderComponentContent: () => {
         return {
           default: () => {
-            return ['A', 'B', 'C', 'D'].map((v) =>
-              h(ElCheckbox, { label: v, value: v }),
-            );
+            return ['A', 'B', 'C', 'D'].map((v) => h(ElCheckbox, { label: v, value: v }));
           },
         };
       },
@@ -163,6 +161,7 @@ function setFormValues() {
   });
 }
 </script>
+
 <template>
   <Page
     description="我们重新包装了CheckboxGroup、RadioGroup、Select，可以通过options属性传入选项属性数组以自动生成选项"
@@ -172,7 +171,7 @@ function setFormValues() {
       <template #header>
         <div class="flex items-center">
           <span class="flex-auto">基础表单演示</span>
-          <ElButton type="primary" @click="setFormValues">设置表单值</ElButton>
+          <ElButton type="primary" @click="setFormValues"> 设置表单值 </ElButton>
         </div>
       </template>
       <Form />
