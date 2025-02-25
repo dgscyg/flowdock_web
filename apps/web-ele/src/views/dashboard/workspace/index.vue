@@ -243,13 +243,10 @@ function navTo(nav: WorkbenchProjectItem | WorkbenchQuickNavItem) {
   }
 }
 </script>
-
+<WeatherCard class="ml-auto w-[300px]" />
 <template>
   <div class="p-5">
-    <WorkbenchHeader
-      :avatar="userStore.userInfo?.avatar || preferences.app.defaultAvatar"
-      class="flex items-center"
-    >
+    <WorkbenchHeader :avatar="userStore.userInfo?.avatar || preferences.app.defaultAvatar" class="flex items-center">
       <template #title>
         <div class="flex w-full items-center">
           <h2 class="text-lg font-medium">
@@ -269,12 +266,7 @@ function navTo(nav: WorkbenchProjectItem | WorkbenchQuickNavItem) {
       </div>
 
       <div class="w-full lg:w-2/5">
-        <WorkbenchQuickNav
-          :items="quickNavItems"
-          class="mt-5 lg:mt-0"
-          title="快捷导航"
-          @click="navTo"
-        />
+        <WorkbenchQuickNav :items="quickNavItems" class="mt-5 lg:mt-0" title="快捷导航" @click="navTo" />
         <WorkbenchTodo :items="todoItems" class="mt-5" title="待办事项" />
         <!-- <AnalysisChartCard class="mt-5" title="访问来源">
           <AnalyticsVisitsSource />
