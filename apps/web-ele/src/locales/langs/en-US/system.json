@@ -4,5 +4,8 @@
   },
   "basic": {
     "title": "Basic Settings"
+  },
+  "storage": {
+    "title": "Storage Management"
   }
 }

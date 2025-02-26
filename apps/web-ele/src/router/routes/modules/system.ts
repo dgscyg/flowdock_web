@@ -20,6 +20,15 @@ const routes: RouteRecordRaw[] = [
           title: $t('system.basic.title'),
         },
       },
+      {
+        name: 'SystemStorage',
+        path: '/system/storage',
+        component: () => import('#/views/system/storage.vue'),
+        meta: {
+          icon: 'lucide:archive',
+          title: $t('system.storage.title'),
+        },
+      },
     ],
   },
 ];
