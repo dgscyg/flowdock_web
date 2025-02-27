@@ -9,6 +9,6 @@ export default defineConfig({
     exclude: [...configDefaults.exclude, '**/e2e/**'],
   },
   optimizeDeps: {
-    exclude: ['@element-plus/icons-vue']
+    exclude: ['@element-plus/icons-vue','qweather-icons']
   },
 });
