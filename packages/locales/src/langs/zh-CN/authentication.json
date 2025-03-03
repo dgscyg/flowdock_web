@@ -5,6 +5,8 @@
   "loginSuccess": "登录成功",
   "loginSuccessDesc": "欢迎回来",
   "loginSubtitle": "请输入您的帐户信息以开始管理您的项目",
+  "registerSuccess": "注册成功",
+  "registerSuccessDesc": "正在跳转至登录页面",
   "selectAccount": "快速选择账号",
   "username": "账号",
   "password": "密码",

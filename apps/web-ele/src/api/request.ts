@@ -8,6 +8,7 @@ import { useAppConfig } from '@vben/hooks';
 import { preferences } from '@vben/preferences';
 import {
   authenticateResponseInterceptor,
+  businessTokenRefreshInterceptor,
   defaultResponseInterceptor,
   errorMessageResponseInterceptor,
   RequestClient,
@@ -29,10 +30,9 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
    * 重新认证逻辑
    */
   async function doReAuthenticate() {
-    console.warn('Access token or refresh token is invalid or expired. ');
+    // console.warn('Access token or refresh token is invalid or expired. ');
     const accessStore = useAccessStore();
     const authStore = useAuthStore();
-    accessStore.setAccessToken(null);
     if (
       preferences.app.loginExpiredMode === 'modal' &&
       accessStore.isAccessChecked
@@ -41,6 +41,7 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
     } else {
       await authStore.logout();
     }
+    accessStore.setAccessToken(null);
   }
 
   /**
@@ -49,13 +50,14 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
   async function doRefreshToken() {
     const accessStore = useAccessStore();
     const resp = await refreshTokenApi();
-    const newToken = resp.data;
+    const newToken = resp.token;
     accessStore.setAccessToken(newToken);
     return newToken;
   }
 
   function formatToken(token: null | string) {
-    return token ? `Bearer ${token}` : null;
+    // return token ? `Bearer ${token}` : null;
+    return token ? token : null;
   }
 
   // 请求头处理
@@ -69,25 +71,58 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
     },
   });
 
+  // 处理业务码为1004的token刷新
+  client.addResponseInterceptor(
+    businessTokenRefreshInterceptor({
+      client,
+      doRefreshToken,
+      doReAuthenticate,
+      formatToken,
+      tokenRefreshCode: 1004,
+      tokenRefreshMessage: '刷新token',
+      tokenReloginCode: 1003,
+      tokenReloginMessage: '信息过期, 请重新登录',
+    }),
+  );
+
+  // 捕获Vue Router初始化期间的错误
+  // 防止路由启动时因token问题导致整个应用崩溃
+  window.addEventListener('unhandledrejection', (event) => {
+    const error = event.reason;
+    if (error && typeof error === 'object' && 'code' in error && error.code === 1003) {
+      // 防止错误传播到Vue Router
+      event.preventDefault();
+      // 静默处理路由初始化期间的token过期错误
+      const accessStore = useAccessStore();
+      if (!accessStore.accessToken) {
+        // 如果没有token，不做处理，让路由守卫正常重定向到登录页
+        return;
+      }
+      // 如果有token但过期了，清除token
+      accessStore.setAccessToken(null);
+    }
+  });
+
   // 处理返回的响应数据格式
   client.addResponseInterceptor(
     defaultResponseInterceptor({
       codeField: 'code',
+      msgField: 'msg',
       dataField: 'data',
       successCode: 0,
     }),
   );
 
-  // token过期的处理
-  client.addResponseInterceptor(
-    authenticateResponseInterceptor({
-      client,
-      doReAuthenticate,
-      doRefreshToken,
-      enableRefreshToken: preferences.app.enableRefreshToken,
-      formatToken,
-    }),
-  );
+  // // token过期的处理
+  // client.addResponseInterceptor(
+  //   authenticateResponseInterceptor({
+  //     client,
+  //     doReAuthenticate,
+  //     doRefreshToken,
+  //     enableRefreshToken: preferences.app.enableRefreshToken,
+  //     formatToken,
+  //   }),
+  // );
 
   // 通用的错误处理,如果没有进入上面的错误处理逻辑，就会进入这里
   client.addResponseInterceptor(
