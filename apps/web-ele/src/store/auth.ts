@@ -9,15 +9,16 @@ import { resetAllStores, useAccessStore, useUserStore } from '@vben/stores';
 import { ElNotification } from 'element-plus';
 import { defineStore } from 'pinia';
 
-import { getAccessCodesApi, getUserInfoApi, loginApi, logoutApi } from '#/api';
+import { getAccessCodesApi, getUserInfoApi, loginApi, logoutApi,registerApi } from '#/api';
+import { type AuthApi } from '#/types/auth';
 import { $t } from '#/locales';
-
 export const useAuthStore = defineStore('auth', () => {
   const accessStore = useAccessStore();
   const userStore = useUserStore();
   const router = useRouter();
 
   const loginLoading = ref(false);
+  const registerLoading = ref(false);
 
   /**
    * 异步处理登录操作
@@ -104,6 +105,30 @@ export const useAuthStore = defineStore('auth', () => {
 
   function $reset() {
     loginLoading.value = false;
+    registerLoading.value = false;
+  }
+
+  async function authRegister(formData: any) {
+    try {
+      registerLoading.value = true
+      
+      const registerParams: AuthApi.RegisterParams = {
+        username: formData.username,
+        password: formData.password
+      };
+      
+      await registerApi(registerParams);
+      // 注册成功后的操作，跳转到登录页面
+      await router.push('/auth/login');
+
+      ElNotification({
+        message: `${$t('authentication.registerSuccessDesc')}`,
+        title: $t('authentication.registerSuccess'),
+        type: 'success',
+      });
+    } finally {
+      registerLoading.value = false;
+    }
   }
 
   return {
@@ -111,6 +136,8 @@ export const useAuthStore = defineStore('auth', () => {
     authLogin,
     fetchUserInfo,
     loginLoading,
+    registerLoading,
     logout,
+    authRegister,
   };
 });

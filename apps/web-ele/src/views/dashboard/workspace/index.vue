@@ -251,7 +251,7 @@ function navTo(nav: WorkbenchProjectItem | WorkbenchQuickNavItem) {
         <div class="flex w-full items-center justify-between">
           <h2 class="text-lg font-medium max-w-[60%] sm:max-w-[70%] md:max-w-[80%]">
             {{ getGreeting() }}, {{ userStore.userInfo?.realName }}, 开始您一天的工作吧！</h2>
-          <p class="ml-5 w-[650px]"></p>
+          <p class="ml-6 w-[1500px]"></p>
           <WeatherCard class="w-[200px] sm:w-[250px] md:w-[300px]" />
         </div>
       </template>

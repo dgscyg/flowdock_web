@@ -2,7 +2,6 @@ import type { RouteRecordRaw } from 'vue-router';
 
 import { AuthPageLayout, BasicLayout } from '#/layouts';
 import { $t } from '#/locales';
-import Login from '#/views/_core/authentication/login.vue';
 import { DEFAULT_HOME_PATH, LOGIN_PATH } from '@vben/constants';
 
 /** 全局404页面 */
@@ -49,7 +48,7 @@ const coreRoutes: RouteRecordRaw[] = [
       {
         name: 'Login',
         path: 'login',
-        component: Login,
+        component: () => import('#/views/_core/authentication/login.vue'),
         meta: {
           title: $t('page.auth.login'),
         },

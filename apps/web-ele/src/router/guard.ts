@@ -92,30 +92,45 @@ function setupAccessGuard(router: Router) {
 
     // 生成路由表
     // 当前登录用户拥有的角色标识列表
-    const userInfo = userStore.userInfo || (await authStore.fetchUserInfo());
-    const userRoles = userInfo.roles ?? [];
+    try {
+      const userInfo = userStore.userInfo || (await authStore.fetchUserInfo());
+      const userRoles = userInfo.roles ?? [];
 
-    // 生成菜单和路由
-    const { accessibleMenus, accessibleRoutes } = await generateAccess({
-      roles: userRoles,
-      router,
-      // 则会在菜单中显示，但是访问会被重定向到403
-      routes: accessRoutes,
-    });
+      // 生成菜单和路由
+      const { accessibleMenus, accessibleRoutes } = await generateAccess({
+        roles: userRoles,
+        router,
+        // 则会在菜单中显示，但是访问会被重定向到403
+        routes: accessRoutes,
+      });
 
-    // 保存菜单信息和路由信息
-    accessStore.setAccessMenus(accessibleMenus);
-    accessStore.setAccessRoutes(accessibleRoutes);
-    accessStore.setIsAccessChecked(true);
-    const redirectPath = (from.query.redirect ??
-      (to.path === DEFAULT_HOME_PATH
-        ? userInfo.homePath || DEFAULT_HOME_PATH
-        : to.fullPath)) as string;
+      // 保存菜单信息和路由信息
+      accessStore.setAccessMenus(accessibleMenus);
+      accessStore.setAccessRoutes(accessibleRoutes);
+      accessStore.setIsAccessChecked(true);
+      const redirectPath = (from.query.redirect ??
+        (to.path === DEFAULT_HOME_PATH
+          ? userInfo.homePath || DEFAULT_HOME_PATH
+          : to.fullPath)) as string;
 
-    return {
-      ...router.resolve(decodeURIComponent(redirectPath)),
-      replace: true,
-    };
+      return {
+        ...router.resolve(decodeURIComponent(redirectPath)),
+        replace: true,
+      };
+    } catch (error: any) {
+      // 捕获获取用户信息或生成路由时的错误
+      if (error?.code === 1003 || error?.response?.status === 401) {
+        // 如果是token过期错误，清除token并重定向到登录页
+        accessStore.setAccessToken(null);
+        return {
+          path: LOGIN_PATH,
+          query: { redirect: encodeURIComponent(to.fullPath) },
+          replace: true,
+        };
+      }
+      // 其他错误，继续抛出
+      throw error;
+    }
   });
 }
 
