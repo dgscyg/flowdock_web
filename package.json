@@ -113,6 +113,10 @@
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.1",
+    "@types/crypto-js": "^4.2.2",
+    "crypto-js": "^4.2.0",
+    "js-base64": "^3.7.7",
+    "jsencrypt": "^3.3.2",
     "qweather-icons": "^1.6.0"
   }
 }

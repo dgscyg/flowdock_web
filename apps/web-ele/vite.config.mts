@@ -19,8 +19,10 @@ export default defineConfig(async () => {
             // mock代理目标地址
             // target: 'http://localhost:5320/api',
             // target: 'http://localhost:8881/basic-api/v1',
+            // target: 'http://192.168.100.13:1005/basic/v1',
             // target: 'http://192.168.100.14:21005/basic/v1',
             target: 'https://dragon.com/basic/v1',
+            // target: 'http://38.46.221.213:21005/basic/v1',
             ws: true,
             secure: false,
           },

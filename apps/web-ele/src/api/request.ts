@@ -17,6 +17,7 @@ import { useAccessStore } from '@vben/stores';
 import { ElMessage } from 'element-plus';
 
 import { refreshTokenApi } from './core';
+import { getEncryptConfig } from '#/utils/encryption';
 
 const { apiURL } = useAppConfig(import.meta.env, import.meta.env.PROD);
 
@@ -30,7 +31,6 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
    * 重新认证逻辑
    */
   async function doReAuthenticate() {
-    // console.warn('Access token or refresh token is invalid or expired. ');
     const accessStore = useAccessStore();
     const authStore = useAuthStore();
     if (
@@ -56,7 +56,6 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
   }
 
   function formatToken(token: null | string) {
-    // return token ? `Bearer ${token}` : null;
     return token ? token : null;
   }
 
@@ -67,6 +66,55 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
 
       config.headers.Authorization = formatToken(accessStore.accessToken);
       config.headers['Accept-Language'] = preferences.app.locale;
+      if(import.meta.env.VITE_API_ENCRYPT !== 'true') {
+        return config;
+      }
+      
+      // 添加加密处理
+      try {
+        // 处理请求路径
+        let path = config.url || '';
+        
+        if (path.startsWith('/api')) {
+          path = path.replace(/^\/api/, '');
+        }
+        
+        if (!path.startsWith('/basic/v1')) {
+          path = '/basic/v1' + path;
+        }
+        
+        if (!path.startsWith('/')) {
+          path = '/' + path;
+        }
+        
+        // 构建加密参数
+        const reqForEncrypt = {
+          method: config.method || 'GET',
+          path: path,
+          params: config.params || {},
+          data: config.data,
+          header: { ...config.headers }
+        };
+        // 获取加密信息
+        const encryptedReq = getEncryptConfig(reqForEncrypt);
+        // 添加加密请求头
+        config.headers['X-Content-Security'] = encryptedReq.header?.['X-Content-Security'] || '';
+        config.headers['Content-Type'] = 'application/json';
+        // 对于 POST 请求，加密请求体
+        if (config.method?.toUpperCase() === 'POST') {
+          config.data = encryptedReq.data;
+          // 防止加密后的请求体被解析
+          config.transformRequest = [(data) => data];
+        }
+        // 对于 GET 请求，更新请求参数
+        if (config.method?.toUpperCase() === 'GET' && encryptedReq.params) {
+          config.params = encryptedReq.params;
+        }
+        
+      } catch (error) {
+        console.error('Request encryption error:', error);
+      }
+      
       return config;
     },
   });
