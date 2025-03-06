@@ -72,49 +72,43 @@ export function objectToString(
  */
 export function rsaEncrypt(data: string): string {
   try {
-    // 先进行emoji编码
     const encodedData = emojiEncode(data);
     const textEncoder = new TextEncoder();
-    const utf8Data = textEncoder.encode(encodedData);
-    
-    // 分块加密数据
     const MAX_CHUNK_SIZE = 53;  // 512位RSA密钥最多能加密约53字节
-    let offset = 0;
+    let chunkStr = '';
     let encryptedChunks: Uint8Array[] = [];
-    
-    while (offset < utf8Data.length) {
-      // 提取一个块
-      const chunk = utf8Data.slice(offset, offset + MAX_CHUNK_SIZE);
-      
-      // 将块转换为encryptor可用的字符串格式
-      const chunkString = String.fromCharCode.apply(null, Array.from(chunk));
-      
-      // 加密块 - 返回base64字符串
-      const base64EncryptedChunk = encryptor.encrypt(chunkString);
-      if (base64EncryptedChunk === false) {
-        throw new Error(`在偏移量 ${offset} 处加密块失败`);
+    for (const char of encodedData) {
+      const temp = chunkStr + char;
+      const tempBytes = textEncoder.encode(temp);
+      if (tempBytes.length > MAX_CHUNK_SIZE) {
+        // 当前chunkStr已达上限，加密它
+        const base64EncryptedChunk = encryptor.encrypt(chunkStr);
+        if (base64EncryptedChunk === false) {
+          throw new Error(`加密块失败: ${chunkStr}`);
+        }
+        const binaryChunk = Base64.toUint8Array(base64EncryptedChunk);
+        encryptedChunks.push(binaryChunk);
+        chunkStr = char; // 新chunk以当前字符开始
+      } else {
+        chunkStr = temp;
       }
-      
-      // 将base64块转换为原始二进制
+    }
+    if (chunkStr) {
+      const base64EncryptedChunk = encryptor.encrypt(chunkStr);
+      if (base64EncryptedChunk === false) {
+        throw new Error(`加密块失败: ${chunkStr}`);
+      }
       const binaryChunk = Base64.toUint8Array(base64EncryptedChunk);
       encryptedChunks.push(binaryChunk);
-      
-      offset += MAX_CHUNK_SIZE;
     }
-    
-    // 计算所有块的总长度
+    // 合并所有加密块
     const totalLength = encryptedChunks.reduce((sum, chunk) => sum + chunk.length, 0);
-    
-    // 将所有二进制块合并到一个数组中
     const combinedArray = new Uint8Array(totalLength);
     let position = 0;
-    
     for (const chunk of encryptedChunks) {
       combinedArray.set(chunk, position);
       position += chunk.length;
     }
-    
-    // 对整个合并后的二进制结果进行Base64编码
     return Base64.fromUint8Array(combinedArray);
   } catch (e) {
     console.error('RSA加密错误:', e);
