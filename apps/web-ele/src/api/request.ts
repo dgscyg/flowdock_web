@@ -72,19 +72,17 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
       
       // 添加加密处理
       try {
-        // 处理请求路径
         let path = config.url || '';
         
+        // 如果 url 前缀是 '/api'，则移除
         if (path.startsWith('/api')) {
           path = path.replace(/^\/api/, '');
         }
         
-        if (!path.startsWith('/basic/v1')) {
-          path = '/basic/v1' + path;
-        }
-        
-        if (!path.startsWith('/')) {
-          path = '/' + path;
+        // 处理多路由情况：如果路径没有以任一已知前缀开头，则默认添加 '/basic/v1'
+        const knownPrefixes = ['/basic/v1', '/fabri/v1'];
+        if (!knownPrefixes.some(prefix => path.startsWith(prefix))) {
+          path = '/basic/v1' + (path.startsWith('/') ? path : '/' + path);
         }
         
         // 构建加密参数
@@ -99,7 +97,7 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
         const encryptedReq = getEncryptConfig(reqForEncrypt);
         // 添加加密请求头
         config.headers['X-Content-Security'] = encryptedReq.header?.['X-Content-Security'] || '';
-        config.headers['Content-Type'] = 'application/json';
+        config.headers['Content-Type'] = 'application/json; charset=utf-8';
         // 对于 POST 请求，加密请求体
         if (config.method?.toUpperCase() === 'POST') {
           config.data = encryptedReq.data;
