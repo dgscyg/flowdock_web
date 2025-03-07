@@ -19,3 +19,13 @@ export async function taskNewApi(data: TaskNewReq): Promise<TaskNewResp> {
 export const taskDeleteApi = (uuid: string) => {
   return requestClient.get('/fabri/v1/task/del', { params: { uuid } });
 };
+
+// 新增任务详情接口
+export async function taskDetailApi(uuid: string): Promise<any> {
+  return requestClient.get('/fabri/v1/task/detail', { params: { uuid } });
+}
+
+// 新增任务更新接口
+export async function taskUpdateApi(data: any): Promise<any> {
+  return requestClient.post('/fabri/v1/task/update', data);
+}
