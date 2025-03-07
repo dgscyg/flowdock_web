@@ -2,7 +2,7 @@
   <div class="flex flex-col h-full">
     <div class="flex-1 overflow-hidden">
       <!-- 主内容区 -->
-      <div v-if="!showCreateDialog" class="h-full p-6 overflow-auto">
+      <div v-if="!showCreateDialog && !showEditDialog" class="h-full p-6 overflow-auto">
         <div class="mb-6 flex items-center justify-between">
           <div class="flex items-center space-x-4">
             <!-- 选择平台和状态 -->
@@ -161,7 +161,7 @@
         </div>
       </div>
       <!-- 创建任务页面 -->
-      <div v-else class="h-full p-6 overflow-auto">
+      <div v-else-if="showCreateDialog" class="h-full p-6 overflow-auto">
         <div class="rounded-lg p-6">
           <div class="flex items-center justify-between mb-6">
             <h2 class="text-xl font-medium">创建新任务</h2>
@@ -296,6 +296,46 @@
           </div>
         </div>
       </div>
+      <!-- 编辑任务页面 -->
+      <div v-else-if="showEditDialog" class="h-full p-6 overflow-auto">
+        <div class="rounded-lg p-6">
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-xl font-medium">编辑任务</h2>
+            <el-button @click="showEditDialog = false" class="!rounded-button">返回列表</el-button>
+          </div>
+          <el-form ref="editFormRef" :model="editForm" label-width="150px">
+            <el-form-item label="任务名称" required>
+              <el-input v-model="editForm.name" placeholder="请输入任务名称" />
+            </el-form-item>
+            <el-form-item label="采集对象" required>
+              <el-input v-model="editForm.target" placeholder="请输入采集对象名称" />
+            </el-form-item>
+            <el-form-item label="平台" required>
+              <el-radio-group v-model="editForm.platform">
+                <el-radio :value="1">Android</el-radio>
+                <el-radio :value="2">iOS</el-radio>
+                <el-radio :value="3">PC</el-radio>
+                <el-radio :value="4">Web</el-radio>
+              </el-radio-group>
+            </el-form-item>
+            <el-form-item label="任务结束时间" required>
+              <el-date-picker v-model="editForm.deadline" type="datetime" placeholder="请选择任务结束时间" format="YYYY-MM-DD HH:mm:ss" value-format="YYYY-MM-DD HH:mm:ss" style="width: 100%" :disabled-date="disabledDate" />
+            </el-form-item>
+            <el-form-item label="标签">
+              <el-select v-model="editForm.tagIds" multiple filterable placeholder="请选择标签" class="w-full">
+                <el-option v-for="tag in tagList" :key="tag.id" :label="tag.name" :value="tag.id" />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="备注">
+              <el-input v-model="editForm.remark" type="textarea" :rows="4" placeholder="请输入备注信息" />
+            </el-form-item>
+          </el-form>
+          <div class="flex justify-end mt-6">
+            <el-button @click="showEditDialog = false" class="mr-4">取消</el-button>
+            <el-button type="primary" @click="handleUpdate" class="!rounded-button whitespace-nowrap">确认更新</el-button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -339,7 +379,7 @@ import {
   ElMessageBox,
   ElPopconfirm,
 } from "element-plus";
-import { taskListApi, taskNewApi, taskDeleteApi } from "#/api/task/task";
+import { taskListApi, taskNewApi, taskDeleteApi, taskDetailApi, taskUpdateApi } from "#/api/task/task";
 import { tagListApi } from "#/api/task/tag";
 import type { Task } from "#/types/task";
 import type { Tag } from "#/types/tag";
@@ -390,6 +430,18 @@ const createdAtSortOrder = ref<string | null>(null);
 const tableRef = ref(null);
 const rowHeight = ref(0);
 
+// 新增编辑相关变量
+const showEditDialog = ref(false);
+const editForm = ref({
+  uuid: "",
+  name: "",
+  target: "",
+  platform: 1,
+  deadline: "",
+  tagIds: [] as number[],
+  remark: "",
+});
+
 // 计算每行高度以平均分配表格高度
 const calculateRowHeight = () => {
   nextTick(() => {
@@ -419,8 +471,25 @@ const calculateRowHeight = () => {
   });
 };
 
-const handleEdit = (row: any) => {
-  console.log("编辑任务", row);
+// 修改编辑任务函数
+const handleEdit = async (row: any) => {
+  try {
+    const res = await taskDetailApi(row.uuid);
+    const task = res.task || res;
+    editForm.value = {
+      uuid: task.uuid,
+      name: task.name || "",
+      target: task.target || "",
+      platform: task.platform || 1,
+      deadline: task.deadline || "",
+      tagIds: task.taskTags ? task.taskTags.map((tag: any) => tag.tagId) : [],
+      remark: task.remark || ""
+    };
+    showEditDialog.value = true;
+  } catch (error) {
+    console.error("获取任务详情失败", error);
+    ElMessage.error("获取任务详情失败");
+  }
 };
 
 const handleDelete = async (row: any) => {
@@ -454,6 +523,19 @@ const handleSubmit = async () => {
     loadTasks();
   } catch (error) {
     console.error("任务创建失败", error);
+  }
+};
+
+// 新增任务更新函数
+const handleUpdate = async () => {
+  try {
+    await taskUpdateApi(editForm.value);
+    ElMessage.success("任务更新成功");
+    showEditDialog.value = false;
+    loadTasks();
+  } catch (error) {
+    console.error("任务更新失败", error);
+    ElMessage.error("任务更新失败");
   }
 };
 
