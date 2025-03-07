@@ -1,5 +1,5 @@
 <template slot-scope="scope">
-  <div class="flex flex-col">
+  <div class="flex flex-col h-full">
     <div class="flex-1 overflow-hidden">
       <!-- 主内容区 -->
       <div v-if="!showCreateDialog" class="h-full p-6 overflow-auto">
@@ -69,7 +69,15 @@
           </div>
         </div>
         <!-- 任务列表 -->
-        <el-table :data="filteredTaskList" style="width: 100%" class="custom-table" @sort-change="handleSortChange">
+        <el-table
+          ref="tableRef"
+          :data="filteredTaskList"
+          style="width: 100%"
+          class="custom-table dynamic-row-height"
+          @sort-change="handleSortChange"
+          :row-style="{ height: rowHeight + 'px' }"
+          :header-row-style="{ height: '50px' }"
+        >
           <el-table-column prop="name" label="任务名称" />
           <el-table-column prop="target" label="采集对象" />
           <el-table-column prop="platform" label="平台" width="120">
@@ -114,7 +122,7 @@
           </el-table-column>
           <el-table-column prop="remark" label="备注" :show-overflow-tooltip="true" />
           <el-table-column prop="createdAt" label="创建时间" width="180" sortable />
-          <el-table-column label="操作" width="150">
+          <el-table-column label="操作" width="150" fixed="right">
             <template #default="scope">
               <el-button-group>
                 <el-button size="small" type="primary" @click="handleEdit(scope.row)">
@@ -122,11 +130,21 @@
                     <Edit />
                   </el-icon>
                 </el-button>
-                <el-button size="small" type="danger" @click="handleDelete(scope.row)">
-                  <el-icon>
-                    <Delete />
-                  </el-icon>
-                </el-button>
+                <el-popconfirm
+                  title="确定删除任务吗？"
+                  :confirm-button-text="'确定'"
+                  :cancel-button-text="'取消'"
+                  popper-class="popconfirm-wide"
+                  @confirm="handleDelete(scope.row)"
+                >
+                  <template #reference>
+                    <el-button size="small" type="danger">
+                      <el-icon>
+                        <Delete />
+                      </el-icon>
+                    </el-button>
+                  </template>
+                </el-popconfirm>
               </el-button-group>
             </template>
           </el-table-column>
@@ -282,7 +300,7 @@
   </div>
 </template>
 <script lang="ts" setup>
-import { ref, computed, watch, onMounted } from "vue";
+import { ref, computed, watch, onMounted, nextTick } from "vue";
 import {
   Search,
   Plus,
@@ -318,8 +336,10 @@ import {
   ElDatePicker,
   ElTooltip,
   ElMessage,
+  ElMessageBox,
+  ElPopconfirm,
 } from "element-plus";
-import { taskListApi, taskNewApi } from "#/api/task/task";
+import { taskListApi, taskNewApi, taskDeleteApi } from "#/api/task/task";
 import { tagListApi } from "#/api/task/tag";
 import type { Task } from "#/types/task";
 import type { Tag } from "#/types/tag";
@@ -367,13 +387,53 @@ const tagList = ref<Tag[]>([]);
 const tagLoading = ref(false);
 const tagSearchQuery = ref("");
 const createdAtSortOrder = ref<string | null>(null);
+const tableRef = ref(null);
+const rowHeight = ref(0);
+
+// 计算每行高度以平均分配表格高度
+const calculateRowHeight = () => {
+  nextTick(() => {
+    // 表格内容区域总高度
+    const tableEl = document.querySelector('.custom-table');
+    if (!tableEl) return;
+    
+    // 获取表格容器高度并减去表头高度和其他边距
+    const containerHeight = tableEl.clientHeight;
+    const headerHeight = 50; // 表头高度
+    const paginationHeight = 0; // 分页区域高度
+    const otherPadding = 0; // 其他内边距等
+    
+    // 内容区域高度 = 容器高度 - 表头 - 分页 - 其他边距
+    const contentHeight = containerHeight - headerHeight - paginationHeight - otherPadding;
+    
+    // 每行高度 = 内容区域高度 / 10行
+    const calculatedRowHeight = Math.max(50, Math.floor(contentHeight / 10));
+    
+    rowHeight.value = calculatedRowHeight;
+    
+    // 确保样式更新
+    const rows = document.querySelectorAll('.custom-table .el-table__row');
+    rows.forEach(row => {
+      (row as HTMLElement).style.height = `${calculatedRowHeight}px`;
+    });
+  });
+};
 
 const handleEdit = (row: any) => {
   console.log("编辑任务", row);
 };
-const handleDelete = (row: any) => {
-  console.log("删除任务", row);
+
+const handleDelete = async (row: any) => {
+  try {
+    await taskDeleteApi(row.uuid);
+    ElMessage.success("任务删除成功");
+    loadTasks();
+  } catch (error) {
+    ElMessage.error("任务删除失败");
+    console.error("删除任务出错", error);
+  }
 };
+
 const handleProgress = (event: any, file: any) => {
   console.log("上传进度", event.percent);
 };
@@ -417,12 +477,19 @@ async function loadTasks() {
     params.tagsId = selectedTagIds.value[0];
   }
   if (createdAtSortOrder.value) {
-    params.sortFields = [`createdAt ${createdAtSortOrder.value === 'ascending' ? 'asc' : 'desc'}`];
+    params.sortFields = [
+      `createdAt ${createdAtSortOrder.value === "ascending" ? "asc" : "desc"}`,
+    ];
   }
   try {
     const res = await taskListApi(params, offset, length);
     taskList.value = res.list || [];
     total.value = res.total;
+    
+    // 数据加载后重新计算行高
+    nextTick(() => {
+      calculateRowHeight();
+    });
   } catch (error) {
     console.error("加载任务列表失败", error);
   }
@@ -483,26 +550,53 @@ const remoteTagSearch = (query: string) => {
   }
 };
 
-const handleSortChange = (sort: { prop: string; order: 'ascending' | 'descending' | null }) => {
-  if (sort.prop === 'createdAt') {
+const handleSortChange = (sort: {
+  prop: string;
+  order: "ascending" | "descending" | null;
+}) => {
+  if (sort.prop === "createdAt") {
     createdAtSortOrder.value = sort.order;
     currentPage.value = 1;
     loadTasks();
   }
 };
 
-
 onMounted(async () => {
   await Promise.all([loadTasks(), loadTags()]);
+  
+  // 初始计算行高
+  calculateRowHeight();
+  
+  // 监听窗口大小变化，重新计算行高
+  window.addEventListener('resize', calculateRowHeight);
 });
 
-
-// 在文件末尾添加 defineExpose 以暴露 remoteTagSearch 和 filteredTaskList
 defineExpose({
   remoteTagSearch,
   filteredTaskList,
 });
 </script>
+<style>
+/* 全局样式 */
+.popconfirm-wide {
+  min-width: 300px !important;
+}
+
+.popconfirm-wide .el-popconfirm__main {
+  padding: 15px !important;
+  font-size: 15px !important;
+}
+
+.popconfirm-wide .el-popconfirm__action {
+  margin-top: 14px !important;
+}
+
+.popconfirm-wide .el-button {
+  padding: 10px 16px !important;
+  font-size: 13px !important;
+}
+</style>
+
 <style scoped>
 .el-menu {
   border-right: none;
@@ -510,5 +604,21 @@ defineExpose({
 
 .task-dialog :deep(.el-dialog__body) {
   padding: 20px;
+}
+
+/* 表格容器样式，确保占据合适的空间 */
+.custom-table {
+  margin-bottom: 20px;
+  height: calc(100vh - 250px) !important;
+}
+
+/* 动态行高表格样式 */
+.dynamic-row-height :deep(.el-table__header-row) {
+  height: 50px !important; /* 表头高度固定 */
+}
+
+.dynamic-row-height :deep(.el-table__cell) {
+  padding: 10px 0 !important;
+  vertical-align: middle !important;
 }
 </style>

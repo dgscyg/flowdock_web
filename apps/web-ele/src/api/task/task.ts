@@ -14,3 +14,8 @@ export async function taskListApi(params: TaskListReq, offset: number, length: n
 export async function taskNewApi(data: TaskNewReq): Promise<TaskNewResp> {
   return requestClient.post<TaskNewResp>('/fabri/v1/task/new', data);
 }
+
+// 新增任务删除接口
+export const taskDeleteApi = (uuid: string) => {
+  return requestClient.get('/fabri/v1/task/del', { params: { uuid } });
+};
