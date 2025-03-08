@@ -5,14 +5,14 @@ import { UserCode } from '#/types/auth_code';
 const routes: RouteRecordRaw[] = [
   {
     meta: {
-      icon: 'lucide:folder-kanban',
-      title: $t('datavision.datavision.title'),
-      order: 2,
+      icon: 'lucide:settings',
+      title: $t('setting.user.title'),
+      order: 5,
       authority: [UserCode],
     },
-    name: 'DataVision',
-    path: '/datavision',
-    component: () => import('#/views/datavision/basic.vue'),
+    name: 'UserSetting',
+    path: '/user',
+    component: () => import('#/views/setting/user/basic.vue'),
   },
 ];
 
