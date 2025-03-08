@@ -132,7 +132,7 @@ const quickNavItems: WorkbenchQuickNavItem[] = [
   {
     color: "#3fb27f",
     icon: "lucide:settings",
-    title: $t('system.system.title'),
+    title: $t('setting.system.title'),
     url: "/system",
   },
 ];

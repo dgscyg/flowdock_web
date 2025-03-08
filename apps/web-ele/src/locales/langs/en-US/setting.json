@@ -7,5 +7,8 @@
   },
   "storage": {
     "title": "Storage Management"
+  },
+  "user": {
+    "title": "User Settings"
   }
 }
