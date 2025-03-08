@@ -16,6 +16,7 @@ import { useAccessStore, useUserStore } from '@vben/stores';
 
 import { useAuthStore } from '#/store';
 import LoginForm from '#/views/_core/authentication/login.vue';
+import { getRoleText } from '../types/auth_code';
 
 const notifications = ref<NotificationItem[]>([
   {
@@ -40,6 +41,8 @@ const menus = computed(() => []);
 const avatar = computed(() => {
   return userStore.userInfo?.avatar ?? preferences.app.defaultAvatar;
 });
+
+const roleTag = computed(() => getRoleText(userStore.userRoles[0]));
 
 async function handleLogout() {
   await authStore.logout(false);
@@ -76,8 +79,8 @@ watch(
         :avatar
         :menus
         :text="userStore.userInfo?.realName"
-        description="dragonsss@dragon.com"
-        tag-text="超级管理员"
+        :description="`用户编号：${userStore.userInfo?.userId}`"
+        :tag-text="roleTag"
         @logout="handleLogout"
       />
     </template>

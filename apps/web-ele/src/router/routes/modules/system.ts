@@ -1,12 +1,13 @@
 import type { RouteRecordRaw } from 'vue-router';
 import { $t } from '#/locales';
-
+import { BusinessSuperAdmin } from '#/types/auth_code';
 const routes: RouteRecordRaw[] = [
   {
     meta: {
       icon: 'lucide:settings',
-      title: $t('system.system.title'),
+      title: $t('setting.system.title'),
       order: 5,
+      authority: [BusinessSuperAdmin],
     },
     name: 'System',
     path: '/system',
@@ -14,19 +15,19 @@ const routes: RouteRecordRaw[] = [
       {
         name: 'SystemBasic',
         path: '/system/basic',
-        component: () => import('#/views/system/basic.vue'),
+        component: () => import('#/views/setting/system/basic.vue'),
         meta: {
           icon: 'lucide:sliders-horizontal',
-          title: $t('system.basic.title'),
+          title: $t('setting.basic.title'),
         },
       },
       {
         name: 'SystemStorage',
         path: '/system/storage',
-        component: () => import('#/views/system/storage.vue'),
+        component: () => import('#/views/setting/system/storage.vue'),
         meta: {
           icon: 'lucide:archive',
-          title: $t('system.storage.title'),
+          title: $t('setting.storage.title'),
         },
       },
     ],

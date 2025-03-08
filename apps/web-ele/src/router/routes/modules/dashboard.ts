@@ -1,6 +1,8 @@
 import type { RouteRecordRaw } from 'vue-router';
 
 import { $t } from '#/locales';
+import { BusinessSuperAdmin } from '#/types/auth_code';
+import { UserCode } from '#/types/auth_code';
 
 const routes: RouteRecordRaw[] = [
   {
@@ -20,6 +22,7 @@ const routes: RouteRecordRaw[] = [
           affixTab: true,
           icon: 'carbon:workspace',
           title: $t('page.dashboard.workspace'),
+          authority: [UserCode],
         },
       },
       {
@@ -29,6 +32,17 @@ const routes: RouteRecordRaw[] = [
         meta: {
           icon: 'lucide:area-chart',
           title: $t('page.dashboard.analytics'),
+          authority: [UserCode],
+        },
+      },
+      {
+        name: 'Overview',
+        path: '/overview',
+        component: () => import('#/views/dashboard/overview/index.vue'),
+        meta: {
+          icon: 'lucide:workspace',
+          title: $t('page.dashboard.overview'),
+          authority: [BusinessSuperAdmin],
         },
       },
     ],
