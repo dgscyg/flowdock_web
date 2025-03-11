@@ -231,21 +231,23 @@
                   class="upload-demo"
                   drag
                   multiple
-                  :auto-upload="true"
-                  :on-progress="handleProgress"
-                  :on-success="handleSuccess"
-                  action="/api/upload"
+                  :auto-upload="false"
+                  :on-change="handleFileChange"
+                  :before-remove="handleRemoveFile"
+                  :disabled="uploadLoading || !s3Config"
+                  ref="uploadRef"
                 >
                   <el-icon class="text-4xl mb-2">
                     <Upload />
                   </el-icon>
-                  <div>将文件拖到此处，或<em class="text-primary">点击上传</em></div>
+                  <div v-if="uploadLoading">正在加载上传配置...</div>
+                  <div v-else>将文件拖到此处，或<em class="text-primary">点击上传</em></div>
                 </el-upload>
                 <!-- 上传列表 -->
                 <div v-if="uploadFiles.length" class="mt-4">
                   <div
                     v-for="file in uploadFiles"
-                    :key="file.name"
+                    :key="file.uid"
                     class="flex items-center justify-between p-2 rounded mb-2"
                   >
                     <div class="flex items-center">
@@ -268,11 +270,14 @@
                       >
                         <Check />
                       </el-icon>
+                      <el-icon v-else-if="file.status === 'error'" class="text-red-500">
+                        <Warning />
+                      </el-icon>
                       <el-button
                         type="danger"
                         size="small"
                         circle
-                        @click="handleRemoveFile(file)"
+                        @click="handleRemoveUploadFile(file)"
                       >
                         <el-icon>
                           <Delete />
@@ -280,6 +285,11 @@
                       </el-button>
                     </div>
                   </div>
+                </div>
+                <div class="mt-4" v-if="uploadFiles.some(f => f.status === 'waiting')">
+                  <el-button type="primary" @click="uploadAllFiles" :loading="isUploading">
+                    开始上传
+                  </el-button>
                 </div>
               </div>
             </div>
@@ -352,6 +362,7 @@ import {
   Upload,
   Document,
   Check,
+  Warning,
 } from "@element-plus/icons-vue";
 import {
   ElButton,
@@ -381,8 +392,13 @@ import {
 } from "element-plus";
 import { taskListApi, taskNewApi, taskDeleteApi, taskDetailApi, taskUpdateApi } from "#/api/task/task";
 import { tagListApi } from "#/api/task/tag";
+import { ossConfigApi } from "../../api/task/oss";
+import { fileNewApi } from "../../api/task/file";
+import { S3Uploader, type S3Config } from "../../utils/s3-upload";
 import type { Task } from "#/types/task";
 import type { Tag } from "#/types/tag";
+import type { FileNewReq } from "#/types/file";
+import type { OssConfigResp } from "#/types/oss";
 import {
   getPlatformDisplay,
   getStatusDisplay,
@@ -404,31 +420,21 @@ const taskForm = ref({
   platform: 1,
   deadline: "",
   tagIds: [] as number[],
+  fileIds: [] as number[],
   remark: "",
 });
 const createTimeRange = ref<[Date, Date]>();
 const selectedTagIds = ref<number[]>([]);
 const taskList = ref<Task[]>([]);
-const uploadFiles = ref([
-  {
-    name: "data_analysis.xlsx",
-    size: "2.5MB",
-    status: "success",
-    percentage: 100,
-  },
-  {
-    name: "user_behavior.json",
-    size: "1.8MB",
-    status: "uploading",
-    percentage: 65,
-  },
-]);
+const uploadFiles = ref<any[]>([]);
+const s3Config = ref<S3Config | null>(null);
 const tagList = ref<Tag[]>([]);
 const tagLoading = ref(false);
 const tagSearchQuery = ref("");
 const createdAtSortOrder = ref<string | null>(null);
 const tableRef = ref(null);
 const rowHeight = ref(0);
+const uploadLoading = ref(false);
 
 // 新增编辑相关变量
 const showEditDialog = ref(false);
@@ -441,6 +447,10 @@ const editForm = ref({
   tagIds: [] as number[],
   remark: "",
 });
+
+const uploadRef = ref();
+const s3Uploader = ref<S3Uploader | null>(null);
+const isUploading = ref(false);
 
 // 计算每行高度以平均分配表格高度
 const calculateRowHeight = () => {
@@ -503,26 +513,150 @@ const handleDelete = async (row: any) => {
   }
 };
 
-const handleProgress = (event: any, file: any) => {
-  console.log("上传进度", event.percent);
+// 文件选择事件处理
+const handleFileChange = (file: any) => {
+  // 如果文件已经在列表中，不重复添加
+  if (uploadFiles.value.some(f => f.uid === file.uid)) {
+    return;
+  }
+  
+  // 添加文件到上传列表，初始状态为等待上传
+  uploadFiles.value.push({
+    uid: file.uid,
+    rawFile: file.raw, // 保存原始文件对象
+    name: file.name,
+    size: formatFileSize(file.size),
+    status: 'waiting',
+    percentage: 0
+  });
 };
-const handleSuccess = (response: any, file: any) => {
-  console.log("上传成功", response);
-};
-const handleRemoveFile = (file: any) => {
-  const index = uploadFiles.value.indexOf(file);
+
+// 移除上传列表中的文件
+const handleRemoveUploadFile = (file: any) => {
+  const index = uploadFiles.value.findIndex(item => item.uid === file.uid);
   if (index !== -1) {
+    // 如果有fileId，从任务表单中移除
+    if (uploadFiles.value[index].fileId) {
+      const idIndex = taskForm.value.fileIds.indexOf(uploadFiles.value[index].fileId);
+      if (idIndex !== -1) {
+        taskForm.value.fileIds.splice(idIndex, 1);
+      }
+    }
     uploadFiles.value.splice(index, 1);
   }
 };
+
+// el-upload的before-remove钩子
+const handleRemoveFile = (file: any) => {
+  handleRemoveUploadFile(file);
+  // 返回true表示允许删除
+  return true;
+};
+
+// 上传所有等待中的文件
+const uploadAllFiles = async () => {
+  if (!s3Uploader.value || isUploading.value) return;
+  
+  isUploading.value = true;
+  
+  try {
+    // 获取所有等待上传的文件
+    const waitingFiles = uploadFiles.value.filter(f => f.status === 'waiting');
+    
+    for (const file of waitingFiles) {
+      try {
+        // 更新状态为上传中
+        file.status = 'uploading';
+        file.percentage = 0;
+        
+        // 上传文件到S3
+        const result = await s3Uploader.value.uploadFile(file.rawFile, (progress) => {
+          file.percentage = progress;
+        });
+        
+        // 上传成功后，将文件信息保存到后端
+        const fileReq: FileNewReq = {
+          name: file.rawFile.name,
+          path: result.key,
+          size: file.rawFile.size,
+          fileType: file.rawFile.name.split('.').pop() || '',
+          url: result.url,
+          storageUuid: s3Config.value?.StorageUuid
+        };
+        
+        // 调用文件创建API
+        const fileRes = await fileNewApi(fileReq);
+        if (fileRes && fileRes.id) {
+          // 添加到任务表单的fileIds中
+          file.fileId = fileRes.id;
+          if (!taskForm.value.fileIds.includes(fileRes.id)) {
+            taskForm.value.fileIds.push(fileRes.id);
+          }
+          
+          // 更新状态为成功
+          file.status = 'success';
+          file.percentage = 100;
+        }
+      } catch (err) {
+        console.error('文件上传失败:', err);
+        file.status = 'error';
+        ElMessage.error(`文件 ${file.name} 上传失败`);
+      }
+    }
+  } finally {
+    isUploading.value = false;
+  }
+};
+
+// 获取OSS配置
+const getOssConfig = async () => {
+  try {
+    uploadLoading.value = true;
+    console.log('正在请求OSS配置...');
+    const res = await ossConfigApi();
+    s3Config.value = res;
+    
+    // 添加日志，检查配置是否正确
+    console.log('获取到的OSS配置:', {
+      Endpoint: res.Endpoint,
+      Bucket: res.Bucket,
+      Region: res.Region,
+      Path: res.Path,
+      // 不输出敏感信息
+      hasAccessKey: !!res.AccessKeyId,
+      hasAccessSecret: !!res.AccessKeySecret
+    });
+    
+    // 确保必要的配置存在
+    if (!res.Bucket) {
+      ElMessage.warning('OSS配置不完整: 缺少Bucket信息');
+    }
+    
+    // 初始化S3上传器
+    if (res) {
+      s3Uploader.value = new S3Uploader(res);
+    }
+    
+    uploadLoading.value = false;
+    return res;
+  } catch (error) {
+    console.error("获取OSS配置失败", error);
+    ElMessage.error("获取OSS配置失败");
+    uploadLoading.value = false;
+    return null;
+  }
+};
+
 const handleSubmit = async () => {
   try {
+    // 确保fileIds已经添加到表单中
     await taskNewApi(taskForm.value);
     ElMessage.success(`任务创建成功`);
     showCreateDialog.value = false;
     loadTasks();
   } catch (error) {
     console.error("任务创建失败", error);
+    ElMessage.error("任务创建失败");
   }
 };
 
@@ -577,7 +711,7 @@ async function loadTasks() {
   }
 }
 
-watch(showCreateDialog, (newValue) => {
+watch(showCreateDialog, async (newValue) => {
   if (newValue === true) {
     taskForm.value = {
       name: "",
@@ -585,8 +719,13 @@ watch(showCreateDialog, (newValue) => {
       platform: 1,
       deadline: "",
       tagIds: [],
+      fileIds: [],
       remark: "",
     };
+    uploadFiles.value = [];
+    
+    // 获取OSS配置
+    await getOssConfig();
   }
 });
 
@@ -657,6 +796,19 @@ defineExpose({
   remoteTagSearch,
   filteredTaskList,
 });
+
+// 格式化文件大小
+const formatFileSize = (size: number) => {
+  if (size < 1024) {
+    return size + 'B';
+  } else if (size < 1024 * 1024) {
+    return (size / 1024).toFixed(2) + 'KB';
+  } else if (size < 1024 * 1024 * 1024) {
+    return (size / (1024 * 1024)).toFixed(2) + 'MB';
+  } else {
+    return (size / (1024 * 1024 * 1024)).toFixed(2) + 'GB';
+  }
+};
 </script>
 <style>
 /* 全局样式 */
