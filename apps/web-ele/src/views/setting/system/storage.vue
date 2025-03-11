@@ -262,7 +262,7 @@ const dialogRules = reactive({
   accessKeyId: [{ required: true, message: 'Access Key不能为空', trigger: 'blur' }],
   accessKeySecret: [{ required: true, message: 'Secret Key不能为空', trigger: 'blur' }],
   bucket: [{ required: true, message: 'Bucket不能为空', trigger: 'blur' }],
-  region: [{ required: true, message: '区域不能为空', trigger: 'blur' }],
+  region: [],
 });
 
 // 处理筛选条件变化
@@ -447,25 +447,29 @@ watch(availableStorageOptions, (newOptions) => {
 
 // 打开对话框
 const openDialog = (type: string, index?: number) => {
-  // 先重置表单，确保在对话框显示前数据已被清空
-  dialogForm.uuid = '';
-  dialogForm.endpoint = '';
-  dialogForm.accessKeyId = '';
-  dialogForm.accessKeySecret = '';
-  dialogForm.bucket = '';
-  dialogForm.region = '';
-  dialogForm.remark = '';
-  dialogForm.isEnable = 1; // 默认启用
+  // 设置当前对话框类型
+  currentDialog.value = type;
   
+  // 根据类型设置标题
   if (type === 'new') {
     dialogTitle.value = '新建OSS配置';
     editingIndex.value = -1;
+    
+    // 清空表单数据
+    dialogForm.uuid = '';
+    dialogForm.endpoint = '';
+    dialogForm.accessKeyId = '';
+    dialogForm.accessKeySecret = '';
+    dialogForm.bucket = '';
+    dialogForm.region = '';
+    dialogForm.remark = '';
+    dialogForm.isEnable = 1; // 默认启用
   } else if (type === 'edit' && typeof index === 'number') {
     dialogTitle.value = '编辑OSS配置';
     editingIndex.value = index;
     const config = ossConfigs.value[index];
     if (config) {
-      // 填充表单
+      // 填充表单数据
       dialogForm.uuid = config.uuid || '';
       dialogForm.endpoint = config.endpoint || '';
       dialogForm.accessKeyId = config.accessKeyId || '';
@@ -477,15 +481,15 @@ const openDialog = (type: string, index?: number) => {
     }
   }
   
-  // 设置当前对话框类型
-  currentDialog.value = type;
-  
-  // 在下一个事件循环中打开对话框，确保表单已被重置
+  // 在下一个事件循环中打开对话框
   setTimeout(() => {
     dialogVisible.value = true;
-    // 如果引用存在，重置表单验证状态
+    
+    // 确保在新建模式下重置表单验证状态
     if (dialogFormRef.value) {
-      dialogFormRef.value.resetFields();
+      if (type === 'new') {
+        dialogFormRef.value.resetFields();
+      }
     }
   }, 0);
 };

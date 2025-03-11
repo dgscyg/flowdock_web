@@ -3,6 +3,17 @@ import { unmountGlobalLoading } from '@vben/utils';
 
 import { overridesPreferences } from './preferences';
 
+// 为AWS SDK提供必要的process对象
+if (typeof window !== 'undefined' && !window.process) {
+  window.process = {
+    env: {},
+    browser: true,
+    version: 'v16.0.0',
+    platform: 'browser',
+    nextTick: (fn: Function) => setTimeout(fn, 0)
+  } as any;
+}
+
 /**
  * 应用初始化完成之后再进行页面加载渲染
  */
