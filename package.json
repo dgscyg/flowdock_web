@@ -55,6 +55,8 @@
   "devDependencies": {
     "@changesets/changelog-github": "catalog:",
     "@changesets/cli": "catalog:",
+    "@esbuild-plugins/node-globals-polyfill": "^0.2.3",
+    "@esbuild-plugins/node-modules-polyfill": "^0.2.2",
     "@playwright/test": "catalog:",
     "@types/node": "catalog:",
     "@vben/commitlint-config": "workspace:*",
@@ -78,6 +80,7 @@
     "lint-staged": "catalog:",
     "playwright": "catalog:",
     "rimraf": "catalog:",
+    "rollup-plugin-node-polyfills": "^0.2.1",
     "tailwindcss": "catalog:",
     "turbo": "catalog:",
     "typescript": "catalog:",
@@ -112,11 +115,14 @@
     ]
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.758.0",
+    "@aws-sdk/lib-storage": "^3.758.0",
     "@element-plus/icons-vue": "^2.3.1",
     "@types/crypto-js": "^4.2.2",
     "crypto-js": "^4.2.0",
     "js-base64": "^3.7.7",
     "jsencrypt": "^3.3.2",
-    "qweather-icons": "^1.6.0"
+    "qweather-icons": "^1.6.0",
+    "util": "^0.12.5"
   }
 }
