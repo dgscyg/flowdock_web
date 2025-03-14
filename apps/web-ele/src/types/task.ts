@@ -4,6 +4,15 @@ export interface TaskTag {
   tagType?: number; // 标签类型: 1-预设标签, 2-用户标签
 }
 
+export interface TaskFile {
+  fileId?: number; // 文件Id
+  fileName?: string; // 文件名称
+  fileSize?: number; // 文件大小
+  fileType?: string; // 文件类型
+  status?: number; // 状态 1-待处理 2-正在处理 3-已完成 4-解析失败
+  url?: string; // 文件地址
+}
+
 export interface Task {
   id: number;
   uuid: string;
@@ -16,6 +25,7 @@ export interface Task {
   createdAt?: string; // 创建时间
   taskTags?: TaskTag[]; // 标签
   remark?: string; // 备注
+  taskFiles?: TaskFile[]; // 文件列表
 }
 
 export interface PageInfo {
@@ -44,11 +54,34 @@ export interface TaskNewReq {
   platform: number; // 平台
   deadline: string; // 任务结束时间
   tagIds?: number[]; // 标签Ids
+  fileIds?: number[]; // 文件Ids
   remark?: string; // 备注
 }
 
 export interface TaskNewResp {
   uuid: string;
+}
+
+export interface TaskDetailReq {
+  uuid: string;
+}
+
+export interface TaskDetailResp {
+  task: Task;
+}
+
+export interface TaskDelReq {
+  uuid: string;
+}
+
+export interface TaskUpdateReq {
+  uuid: string;
+  name: string; // 任务名称
+  target: string; // 采集对象
+  platform: number; // 平台
+  deadline: string; // 任务结束时间
+  tagIds?: number[]; // 标签Ids
+  remark?: string; // 备注
 }
 
 // 新增映射定义
@@ -63,7 +96,8 @@ export const statusMapping: Record<number, string> = {
   1: '未开始',
   2: '进行中',
   3: '已完成',
-  4: '已取消'
+  4: '已取消',
+  5: '解析失败',
 };
 
 export const getPlatformDisplay = (platform: number): string => {
@@ -89,7 +123,8 @@ export const getStatusTagType = (status: number): 'success' | 'warning' | 'info'
     1: 'info',
     2: 'primary',
     3: 'success',
-    4: 'danger'
+    4: 'danger',
+    5: 'warning'
   };
   return types[status] || 'info';
 };

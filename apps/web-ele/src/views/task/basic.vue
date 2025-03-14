@@ -19,6 +19,7 @@
               <el-option label="进行中" :value="2" />
               <el-option label="已完成" :value="3" />
               <el-option label="已取消" :value="4" />
+              <el-option label="解析失败" :value="5" />
             </el-select>
             <el-select
               v-model="selectedTagIds"
@@ -59,7 +60,7 @@
             <el-button
               type="primary"
               @click="showCreateDialog = true"
-              class="!rounded-button whitespace-nowrap"
+              class="rounded-button whitespace-nowrap"
             >
               <el-icon class="mr-1">
                 <Plus />
@@ -97,26 +98,29 @@
           <el-table-column prop="taskTags" label="标签" width="180">
             <template #default="scope">
               <div class="flex flex-wrap items-center">
-                <el-tooltip
-                  v-for="tag in scope.row.taskTags"
-                  :key="tag.tagId"
-                  :content="tag.tagName"
-                  placement="top"
-                >
-                  <div
-                    class="mr-2 mb-1"
-                    style="
-                      max-width: 100px;
-                      overflow: hidden;
-                      text-overflow: ellipsis;
-                      white-space: nowrap;
-                    "
+                <template v-if="scope.row.taskTags && scope.row.taskTags.length > 0">
+                  <el-tooltip
+                    v-for="tag in scope.row.taskTags"
+                    :key="tag.tagId"
+                    :content="tag.tagName"
+                    placement="top"
                   >
-                    <el-tag :type="getTagType(tag.tagName)">
-                      {{ tag.tagName }}
-                    </el-tag>
-                  </div>
-                </el-tooltip>
+                    <div
+                      class="mr-2 mb-1"
+                      style="
+                        max-width: 100px;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        white-space: nowrap;
+                      "
+                    >
+                      <el-tag :type="getTagType(tag.tagName)">
+                        {{ tag.tagName }}
+                      </el-tag>
+                    </div>
+                  </el-tooltip>
+                </template>
+                <el-tag v-else type="info" class="mr-2 mb-1">-</el-tag>
               </div>
             </template>
           </el-table-column>
@@ -165,7 +169,7 @@
         <div class="rounded-lg p-6">
           <div class="flex items-center justify-between mb-6">
             <h2 class="text-xl font-medium">创建新任务</h2>
-            <el-button @click="showCreateDialog = false" class="!rounded-button"
+            <el-button @click="showCreateDialog = false" class="rounded-button"
               >返回列表</el-button
             >
           </div>
@@ -299,7 +303,8 @@
             <el-button
               type="primary"
               @click="handleSubmit"
-              class="!rounded-button whitespace-nowrap"
+              :loading="isSubmitting"
+              class="rounded-button whitespace-nowrap"
             >
               确认创建
             </el-button>
@@ -311,7 +316,7 @@
         <div class="rounded-lg p-6">
           <div class="flex items-center justify-between mb-6">
             <h2 class="text-xl font-medium">编辑任务</h2>
-            <el-button @click="showEditDialog = false" class="!rounded-button">返回列表</el-button>
+            <el-button @click="showEditDialog = false" class="rounded-button">返回列表</el-button>
           </div>
           <el-form ref="editFormRef" :model="editForm" label-width="150px">
             <el-form-item label="任务名称" required>
@@ -342,7 +347,14 @@
           </el-form>
           <div class="flex justify-end mt-6">
             <el-button @click="showEditDialog = false" class="mr-4">取消</el-button>
-            <el-button type="primary" @click="handleUpdate" class="!rounded-button whitespace-nowrap">确认更新</el-button>
+            <el-button
+              type="primary"
+              @click="handleUpdate"
+              :loading="isSubmitting"
+              class="rounded-button whitespace-nowrap"
+            >
+              确认更新
+            </el-button>
           </div>
         </div>
       </div>
@@ -451,6 +463,7 @@ const editForm = ref({
 const uploadRef = ref();
 const s3Uploader = ref<S3Uploader | null>(null);
 const isUploading = ref(false);
+const isSubmitting = ref(false);
 
 // 计算每行高度以平均分配表格高度
 const calculateRowHeight = () => {
@@ -648,6 +661,9 @@ const getOssConfig = async () => {
 };
 
 const handleSubmit = async () => {
+  if (isSubmitting.value) return;
+  
+  isSubmitting.value = true;
   try {
     // 确保fileIds已经添加到表单中
     await taskNewApi(taskForm.value);
@@ -657,11 +673,16 @@ const handleSubmit = async () => {
   } catch (error) {
     console.error("任务创建失败", error);
     ElMessage.error("任务创建失败");
+  } finally {
+    isSubmitting.value = false;
   }
 };
 
 // 新增任务更新函数
 const handleUpdate = async () => {
+  if (isSubmitting.value) return; // 防止重复提交
+  
+  isSubmitting.value = true;
   try {
     await taskUpdateApi(editForm.value);
     ElMessage.success("任务更新成功");
@@ -670,6 +691,8 @@ const handleUpdate = async () => {
   } catch (error) {
     console.error("任务更新失败", error);
     ElMessage.error("任务更新失败");
+  } finally {
+    isSubmitting.value = false; // 重置提交状态
   }
 };
 

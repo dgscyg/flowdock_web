@@ -1,5 +1,14 @@
 import { requestClient } from '#/api/request';
-import type { TaskListReq, TaskListResp, TaskNewReq, TaskNewResp } from '#/types/task';
+import type { 
+  TaskListReq, 
+  TaskListResp, 
+  TaskNewReq, 
+  TaskNewResp,
+  TaskDetailReq,
+  TaskDetailResp,
+  TaskDelReq,
+  TaskUpdateReq
+} from '#/types/task';
 
 /**
  * 任务列表
@@ -15,17 +24,24 @@ export async function taskNewApi(data: TaskNewReq): Promise<TaskNewResp> {
   return requestClient.post<TaskNewResp>('/fabri/v1/task/new', data);
 }
 
-// 新增任务删除接口
-export const taskDeleteApi = (uuid: string) => {
-  return requestClient.get('/fabri/v1/task/del', { params: { uuid } });
+/**
+ * 任务删除
+ */
+export async function taskDeleteApi(params: TaskDelReq): Promise<void> {
+  return requestClient.get('/fabri/v1/task/del', { params });
 };
 
-// 新增任务详情接口
-export async function taskDetailApi(uuid: string): Promise<any> {
-  return requestClient.get('/fabri/v1/task/detail', { params: { uuid } });
+/**
+ * 任务详情
+ */
+export async function taskDetailApi(uuid: string): Promise<TaskDetailResp> {
+  const params: TaskDetailReq = { uuid };
+  return requestClient.get<TaskDetailResp>('/fabri/v1/task/detail', { params });
 }
 
-// 新增任务更新接口
-export async function taskUpdateApi(data: any): Promise<any> {
+/**
+ * 任务更新
+ */
+export async function taskUpdateApi(data: TaskUpdateReq): Promise<void> {
   return requestClient.post('/fabri/v1/task/update', data);
 }
