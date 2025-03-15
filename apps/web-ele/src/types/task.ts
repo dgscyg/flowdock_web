@@ -6,6 +6,7 @@ export interface TaskTag {
 
 export interface TaskFile {
   fileId?: number; // 文件Id
+  fileUuid?: string; // 文件UUID
   fileName?: string; // 文件名称
   fileSize?: number; // 文件大小
   fileType?: string; // 文件类型
