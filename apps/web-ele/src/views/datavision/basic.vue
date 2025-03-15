@@ -176,7 +176,11 @@
 
         <!-- 内容展示区域 -->
         <div class="content-container">
-          <component :is="currentComponent" :data="currentData" />
+          <component 
+            :is="currentComponent" 
+            :data="currentData" 
+            @pageChange="handlePageChange"
+          />
         </div>
       </div>
 
@@ -207,6 +211,8 @@ import {
   getPlatformTagType,
   getStatusTagType
 } from '#/types/task'
+import { fileInfoEsListApi } from '#/api/es/es_file'
+import type { FileInfoEs, FileInfoEsListReq } from '#/types/es'
 import { ElLoading, ElMessage } from 'element-plus'
 
 import {
@@ -256,6 +262,7 @@ interface TaskDataType {
   fileInfo?: any;
   files: any[];
   data: any[];
+  total?: number;
   selectedFileId: string;
 }
 
@@ -461,31 +468,65 @@ const handleTabClick = () => {
   console.log('切换到:', activeTab.value)
 }
 
-// 加载任务数据的函数(移除或修正为符合类型)
+// 加载任务数据的函数
 const fetchTaskData = async () => {
-  // 注释掉有问题的代码
-  /*
-  try {
-    const response = await fetch('/api/task-data') // 修改为实际API
-    const data = await response.json()
-    
-    // 确保更新taskData时包含所有必要字段
-    taskData.value = {
-      taskId: data.id,
-      taskInfo: data.info,
-      fileInfo: data.fileInfo,
-      files: data.files || [],
-      data: data.data || [],
-      selectedFileId: data.selectedFileId
-    }
-  } catch (error) {
-    console.error('加载任务数据失败:', error)
-    ElMessage.error('加载任务数据失败，请重试')
+  if (!selectedTask.value || !selectedFile.value || !selectedFileInfo.value) {
+    ElMessage.warning('请先选择任务和文件')
+    return
   }
-  */
   
-  // 确保taskData初始为null
-  taskData.value = null
+  const loading = ElLoading.service({
+    lock: true,
+    text: '加载数据中...',
+    background: 'rgba(255, 255, 255, 0.7)',
+  })
+  
+  try {
+    // 构建请求参数
+    const requestParams: FileInfoEsListReq = {
+      taskId: selectedTask.value.uuid,
+      fileId: selectedFile.value,
+      fileUuid:  selectedFileInfo.value.fileData.fileUuid?.toString(),
+      sortFields: ['timestamp desc'], // 默认按时间戳降序排序
+      offset: 0,
+      length: 20 // 初始加载100条数据
+    }
+    
+    console.log('开始请求ES数据:', requestParams)
+    
+    // 调用API获取数据
+    const response = await fileInfoEsListApi(requestParams, requestParams.offset, requestParams.length)
+    
+    console.log('ES数据获取成功:', response)
+    
+    // 更新数据
+    taskData.value = {
+      taskId: selectedTask.value.uuid,
+      taskInfo: selectedTask.value,
+      fileInfo: {
+        fileType: selectedFileInfo.value.fileData.fileType,
+        fileName: selectedFileInfo.value.fileData.fileName,
+        fileId: selectedFile.value,
+        fileUuid: selectedFileInfo.value.fileData.fileUuid?.toString()
+      },
+      files: selectedTask.value.taskFiles || [],
+      data: response.list || [],
+      total: response.total || (response.list?.length || 0), // 确保传递total值
+      selectedFileId: selectedFile.value
+    }
+    
+    // 设置默认页签
+    activeTab.value = 'list'
+    
+    ElMessage.success(`成功加载 ${response.list?.length || 0} 条数据`)
+  } catch (error) {
+    console.error('加载ES数据失败:', error)
+    ElMessage.error('加载数据失败，请重试')
+    // 确保taskData初始为null
+    taskData.value = null
+  } finally {
+    loading.close()
+  }
 }
 
 // 处理选择完成后的逻辑
@@ -495,95 +536,47 @@ const handleSelectionComplete = () => {
     return
   }
   
-  // 更新主数据对象
-  taskData.value = {
-    taskId: selectedTask.value.uuid,
-    taskInfo: selectedTask.value,
-    fileInfo: fileOptions.value.find(f => f.value === selectedFile.value)?.fileData,
-    files: selectedTask.value.taskFiles || [],
-    data: [],
-    selectedFileId: selectedFile.value
+  // 调用加载数据函数
+  fetchTaskData()
+}
+
+// 加载选定文件的数据
+const loadDataAfterSelection = async () => {
+  if (!selectedTask.value || !selectedFile.value) {
+    ElMessage.warning('请先选择任务和文件')
+    return
   }
   
-  // 保存用户的选择到本地存储
-  saveUserSelection()
-  
-  ElMessage.success('开始分析数据')
-  console.log('任务选择完成，开始分析:', { 
-    task: selectedTask.value.name, 
-    file: fileOptions.value.find(f => f.value === selectedFile.value)?.label
-  })
-  
-  // 加载数据
-  loadDataAfterSelection()
+  // 调用fetchTaskData加载数据
+  fetchTaskData()
 }
 
 // 监听选定文件的变化，自动加载数据
 watch(() => selectedFile.value, (newFileId) => {
   if (newFileId && selectedTask.value) {
-    // 更新主数据对象
-    taskData.value = {
-      taskId: selectedTask.value.uuid,
-      taskInfo: selectedTask.value,
-      fileInfo: fileOptions.value.find(f => f.value === selectedFile.value)?.fileData,
-      files: selectedTask.value.taskFiles || [],
-      data: [],
-      selectedFileId: selectedFile.value
-    }
-    
-    // 保存用户的选择到本地存储
-    saveUserSelection()
-    
-    console.log('文件选择完成，自动开始分析:', { 
-      task: selectedTask.value.name, 
-      file: fileOptions.value.find(f => f.value === selectedFile.value)?.label
-    })
-    
-    // 加载数据
+    // 自动加载数据
     loadDataAfterSelection()
   }
 })
 
-// 加载选定文件的数据
-const loadDataAfterSelection = async () => {
-  if (!taskData.value?.taskId || !taskData.value?.selectedFileId) {
-    console.warn('缺少任务ID或文件ID，无法加载数据')
-    return
-  }
-  
-  try {
-    dataLoading.value = true
-    console.log('正在加载数据...', {
-      taskId: taskData.value.taskId,
-      fileId: taskData.value.selectedFileId
-    })
-    
-    // TODO: 实际实现数据加载
-    // const response = await api.getDataForTask(taskData.value.taskId, taskData.value.selectedFileId)
-    // taskData.value.data = response.data
-    
-    // 模拟数据加载
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    taskData.value.data = generateMockData(20)
-    
-    ElMessage.success('数据加载成功')
-  } catch (error) {
-    console.error('加载数据失败:', error)
-    ElMessage.error('加载数据失败，请重试')
-  } finally {
-    dataLoading.value = false
-  }
-}
-
-// 生成模拟数据用于测试
+// 生成模拟数据的函数 - 仅用于测试
 const generateMockData = (count: number) => {
-  return Array.from({ length: count }, (_, i) => ({
-    id: `item-${i}`,
-    name: `数据项 ${i + 1}`,
-    value: Math.floor(Math.random() * 1000),
-    category: ['类别A', '类别B', '类别C'][Math.floor(Math.random() * 3)],
-    date: new Date(Date.now() - Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-  }))
+  const result = []
+  for (let i = 0; i < count; i++) {
+    result.push({
+      id: `packet-${i}`,
+      timestamp: new Date(Date.now() - i * 60000).toISOString(),
+      sourceFormat: 'pcap',
+      sourceIP: `192.168.1.${i % 254 + 1}`,
+      destinationIP: `10.0.0.${i % 254 + 1}`,
+      transportProtocol: i % 2 === 0 ? 'TCP' : 'UDP',
+      sourcePort: 1000 + i,
+      destinationPort: 80 + (i % 20),
+      packetLength: 100 + (i * 10),
+      applicationProtocol: i % 3 === 0 ? 'HTTP' : (i % 3 === 1 ? 'DNS' : 'TLS')
+    })
+  }
+  return result
 }
 
 // 添加数据加载状态变量
@@ -787,6 +780,82 @@ const handleTaskSearchFocus = () => {
     searchTasks()
   }
 }
+
+// 添加处理分页变化的方法
+const handlePageChange = async (pageInfo: { offset: number, length: number, page: number, size: number }) => {
+  if (!selectedTask.value || !selectedFile.value || !selectedFileInfo.value) return
+  
+  console.log('接收到分页变更:', pageInfo)
+  
+  // 添加一个简单的防抖标记，避免短时间内重复请求
+  const requestId = Date.now().toString()
+  console.log(`分页请求开始: ID=${requestId}, 页码=${pageInfo.page}, 每页条数=${pageInfo.size}`)
+  
+  const loading = ElLoading.service({
+    lock: true,
+    text: '加载数据中...',
+    background: 'rgba(255, 255, 255, 0.7)',
+  })
+  
+  try {
+    // 构建请求参数
+    const requestParams: FileInfoEsListReq = {
+      taskId: selectedTask.value.uuid,
+      fileId: selectedFile.value,
+      fileUuid: selectedFileInfo.value.fileData.fileUuid?.toString(),
+      sortFields: ['timestamp desc'],
+      offset: pageInfo.offset,
+      length: pageInfo.length
+    }
+    
+    console.log(`[请求 ${requestId}] 发送ES查询请求:`, requestParams)
+    
+    // 调用API获取新页数据
+    const response = await fileInfoEsListApi(requestParams, requestParams.offset, requestParams.length)
+    
+    console.log(`[请求 ${requestId}] ES分页数据响应:`, response)
+    
+    // 如果taskData不存在，则初始化
+    if (!taskData.value) {
+      taskData.value = {
+        taskId: selectedTask.value.uuid,
+        taskInfo: selectedTask.value,
+        fileInfo: {
+          fileType: selectedFileInfo.value.fileData.fileType,
+          fileName: selectedFileInfo.value.fileData.fileName,
+          fileId: selectedFile.value,
+          fileUuid: selectedFileInfo.value.fileData.fileUuid?.toString()
+        },
+        files: selectedTask.value.taskFiles || [],
+        data: [],
+        selectedFileId: selectedFile.value,
+        total: 0
+      }
+    }
+    
+    // 更新数据
+    taskData.value.data = response.list || []
+    
+    // 明确记录total变更
+    const oldTotal = taskData.value.total || 0
+    const newTotal = response.total || (response.list?.length || 0)
+    taskData.value.total = newTotal
+    
+    console.log(`[请求 ${requestId}] 分页数据加载成功:`, {
+      listLength: response.list?.length || 0,
+      oldTotal,
+      newTotal,
+      total: taskData.value.total
+    })
+    
+  } catch (error) {
+    console.error(`[请求 ${requestId}] 分页加载数据失败:`, error)
+    ElMessage.error('加载数据失败，请重试')
+  } finally {
+    loading.close()
+    console.log(`[请求 ${requestId}] 请求结束`)
+  }
+}
 </script>
 
 <style scoped>
@@ -844,8 +913,8 @@ const handleTaskSearchFocus = () => {
 }
 
 .content-container {
-  min-height: 400px;
-  max-height: calc(100vh - 200px);
+  /* min-height: 800px;
+  max-height: calc(100vh - 150px); */
   border-radius: 4px;
   padding: 0;
   overflow: auto;
