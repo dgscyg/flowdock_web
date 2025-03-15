@@ -169,7 +169,7 @@
         <div class="tab-container" ref="tabContainer">
           <el-tabs v-model="activeTab" @tab-click="handleTabClick" type="card">
             <el-tab-pane name="list" label="数据列表"></el-tab-pane>
-            <el-tab-pane name="chart" label="图表分析"></el-tab-pane>
+            <!-- <el-tab-pane name="chart" label="图表分析"></el-tab-pane> -->
             <el-tab-pane name="source" label="源数据"></el-tab-pane>
           </el-tabs>
         </div>
@@ -486,10 +486,10 @@ const fetchTaskData = async () => {
     const requestParams: FileInfoEsListReq = {
       taskId: selectedTask.value.uuid,
       fileId: selectedFile.value,
-      fileUuid:  selectedFileInfo.value.fileData.fileUuid?.toString(),
+      fileUuid: selectedFileInfo.value.fileData.fileUuid?.toString(),
       sortFields: ['timestamp desc'], // 默认按时间戳降序排序
       offset: 0,
-      length: 20 // 初始加载100条数据
+      length: 20 // 初始加载20条数据
     }
     
     console.log('开始请求ES数据:', requestParams)
@@ -498,8 +498,12 @@ const fetchTaskData = async () => {
     const response = await fileInfoEsListApi(requestParams, requestParams.offset, requestParams.length)
     
     console.log('ES数据获取成功:', response)
+    console.log('服务器返回的total值:', response.total, '类型:', typeof response.total)
     
-    // 更新数据
+    // 正确处理total值，即使是0
+    const totalRecords = typeof response.total === 'number' ? response.total : (response.list?.length || 0);
+    
+    // 更新数据 - 处理新的API响应格式
     taskData.value = {
       taskId: selectedTask.value.uuid,
       taskInfo: selectedTask.value,
@@ -510,15 +514,20 @@ const fetchTaskData = async () => {
         fileUuid: selectedFileInfo.value.fileData.fileUuid?.toString()
       },
       files: selectedTask.value.taskFiles || [],
-      data: response.list || [],
-      total: response.total || (response.list?.length || 0), // 确保传递total值
+      data: response.list || [], // 使用list字段，这个在fileInfoEsListApi中已处理转换
+      total: totalRecords, // 使用正确处理过的total值
       selectedFileId: selectedFile.value
     }
     
     // 设置默认页签
     activeTab.value = 'list'
     
-    ElMessage.success(`成功加载 ${response.list?.length || 0} 条数据`)
+    console.log('更新后的taskData:', { 
+      dataLength: taskData.value.data.length, 
+      total: taskData.value.total 
+    });
+    
+    ElMessage.success(`成功加载 ${response.list?.length || 0} 条数据, 总计 ${totalRecords} 条`)
   } catch (error) {
     console.error('加载ES数据失败:', error)
     ElMessage.error('加载数据失败，请重试')
@@ -552,12 +561,25 @@ const loadDataAfterSelection = async () => {
 }
 
 // 监听选定文件的变化，自动加载数据
-watch(() => selectedFile.value, (newFileId) => {
+watch(() => selectedFile.value, (newFileId, oldFileId) => {
   if (newFileId && selectedTask.value) {
+    console.log('文件切换: 从', oldFileId, '到', newFileId);
+    
+    // 重置DataList组件的分页状态 - 需要先清空数据，然后重新加载
+    if (taskData.value) {
+      console.log('清空现有数据，以便重置分页状态');
+      // 保存当前任务和文件信息，但清空数据列表
+      taskData.value = {
+        ...taskData.value,
+        data: [], // 清空数据列表
+        selectedFileId: newFileId
+      };
+    }
+    
     // 自动加载数据
-    loadDataAfterSelection()
+    loadDataAfterSelection();
   }
-})
+});
 
 // 生成模拟数据的函数 - 仅用于测试
 const generateMockData = (count: number) => {
@@ -814,6 +836,7 @@ const handlePageChange = async (pageInfo: { offset: number, length: number, page
     const response = await fileInfoEsListApi(requestParams, requestParams.offset, requestParams.length)
     
     console.log(`[请求 ${requestId}] ES分页数据响应:`, response)
+    console.log(`[请求 ${requestId}] 服务器返回的total值类型:`, typeof response.total, '值:', response.total)
     
     // 如果taskData不存在，则初始化
     if (!taskData.value) {
@@ -837,15 +860,23 @@ const handlePageChange = async (pageInfo: { offset: number, length: number, page
     taskData.value.data = response.list || []
     
     // 明确记录total变更
-    const oldTotal = taskData.value.total || 0
-    const newTotal = response.total || (response.list?.length || 0)
-    taskData.value.total = newTotal
+    const oldTotal = taskData.value.total || 0;
+    
+    // 关键修改: 确保即使response.total为0也正确设置到taskData.total
+    if (typeof response.total === 'number') {
+      // 直接使用response.total，即使它是0
+      taskData.value.total = response.total;
+    } else if (response.total === undefined) {
+      // 如果没有total字段，使用返回的数据长度
+      taskData.value.total = response.list?.length || 0;
+    }
     
     console.log(`[请求 ${requestId}] 分页数据加载成功:`, {
       listLength: response.list?.length || 0,
       oldTotal,
-      newTotal,
-      total: taskData.value.total
+      newTotal: taskData.value.total,
+      responseTotal: response.total,
+      responseType: typeof response.total
     })
     
   } catch (error) {
