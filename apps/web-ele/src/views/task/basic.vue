@@ -18,7 +18,7 @@
               <el-option label="未开始" :value="1" />
               <el-option label="进行中" :value="2" />
               <el-option label="已完成" :value="3" />
-              <el-option label="已取消" :value="4" />
+              <el-option label="已过期" :value="4" />
               <el-option label="解析失败" :value="5" />
             </el-select>
             <el-select
