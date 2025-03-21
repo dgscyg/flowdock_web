@@ -20,7 +20,7 @@ export interface Task {
   name?: string; // 任务名称
   target?: string; // 采集对象
   platform?: number; // 平台 1-Android, 2-IOS, 3-PC, 4-Web
-  status?: number; // 状态 1-未开始, 2-进行中, 3-已完成, 4-已取消
+  status?: number; // 状态 1-未开始, 2-进行中, 3-已完成, 4-已过期，5-解析失败
   deadline?: string; // 任务结束时间
   updatedAt: string; // 状态变更时间
   createdAt?: string; // 创建时间
@@ -97,7 +97,7 @@ export const statusMapping: Record<number, string> = {
   1: '未开始',
   2: '进行中',
   3: '已完成',
-  4: '已取消',
+  4: '已过期',
   5: '解析失败',
 };
 
