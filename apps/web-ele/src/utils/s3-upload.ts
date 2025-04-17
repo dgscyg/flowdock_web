@@ -2,6 +2,8 @@
 import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { GetObjectCommand } from '@aws-sdk/client-s3';
 
 export interface S3Config {
   Endpoint?: string;       // S3地址
@@ -149,5 +151,76 @@ export class S3Uploader {
     });
     
     await this.s3Client.send(command);
+  }
+
+  /**
+   * 从文件URL中提取key
+   * @param url 完整的文件URL
+   * @returns 文件的key
+   */
+  private extractKeyFromUrl(url: string): string | null {
+    try {
+      if (!this.config.Bucket) return null;
+      
+      // 解析URL获取路径
+      const parsedUrl = new URL(url);
+      const pathname = parsedUrl.pathname;
+      
+      // 移除开头的斜杠和bucket名称
+      const bucketPrefix = `/${this.config.Bucket}/`;
+      if (pathname.startsWith(bucketPrefix)) {
+        return pathname.substring(bucketPrefix.length);
+      }
+      
+      // 尝试从标准S3 URL中提取
+      const s3HostPattern = new RegExp(`^https?://${this.config.Bucket}\\.s3\\..*\\.amazonaws\\.com/(.*)$`);
+      const s3Match = url.match(s3HostPattern);
+      if (s3Match && s3Match[1]) {
+        return s3Match[1];
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('URL解析失败:', error);
+      return null;
+    }
+  }
+  
+  /**
+   * 生成预签名URL，用于临时访问私有对象
+   * @param url 原始的对象URL
+   * @param expiresIn URL有效期(秒)，默认1小时
+   * @returns 预签名URL，如果生成失败则返回原始URL
+   */
+  async getPresignedUrl(url: string, expiresIn: number = 3600): Promise<string> {
+    try {
+      // 如果不是有效的URL或没有配置Bucket，直接返回原始URL
+      if (!url || !this.config.Bucket) {
+        return url;
+      }
+      
+      // 从URL中提取对象的key
+      const key = this.extractKeyFromUrl(url);
+      if (!key) {
+        console.warn('无法从URL中提取Key:', url);
+        return url;
+      }
+      
+      // 创建GetObject命令
+      const command = new GetObjectCommand({
+        Bucket: this.config.Bucket,
+        Key: key
+      }) as any;
+      
+      // 使用类型断言解决AWS SDK版本冲突问题
+      // 生成预签名URL
+      const presignedUrl = await getSignedUrl(this.s3Client as any, command, { expiresIn });
+      console.log('生成预签名URL成功:', { originalUrl: url, presignedUrl });
+      
+      return presignedUrl;
+    } catch (error) {
+      console.error('生成预签名URL失败:', error);
+      return url; // 失败时返回原始URL
+    }
   }
 } 
