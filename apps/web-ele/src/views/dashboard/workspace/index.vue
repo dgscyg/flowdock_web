@@ -6,21 +6,25 @@ import type {
   WorkbenchTrendItem,
 } from "@vben/common-ui";
 
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 
 import {
   WorkbenchHeader,
   WorkbenchProject,
   WorkbenchQuickNav,
-  WorkbenchTodo,
-  WorkbenchTrends,
+  // WorkbenchTodo, // 注释掉不再使用的组件
+  // WorkbenchTrends, // 注释掉不再使用的组件
 } from "@vben/common-ui";
 import { preferences } from "@vben/preferences";
 import { useUserStore } from "@vben/stores";
 import { openWindow } from "@vben/utils";
+import { taskListApi } from "#/api/task/task";
+import { getPlatformDisplay, getStatusDisplay } from "#/types/task";
 
 import WeatherCard from "./weather-card.vue";
+import LatestTasks from "./latest-tasks.vue"; // 导入新的最新任务组件
+import LatestFiles from "./latest-files.vue"; // 导入新的最新文件组件
 import { $t } from '#/locales';
 
 const userStore = useUserStore();
@@ -169,62 +173,6 @@ const todoItems = ref<WorkbenchTodoItem[]>([
     title: "修复UI显示问题",
   },
 ]);
-const trendItems: WorkbenchTrendItem[] = [
-  {
-    avatar: "svg:avatar-1",
-    content: `在 <a>开源组</a> 创建了项目 <a>Vue</a>`,
-    date: "刚刚",
-    title: "威廉",
-  },
-  {
-    avatar: "svg:avatar-2",
-    content: `关注了 <a>威廉</a> `,
-    date: "1个小时前",
-    title: "艾文",
-  },
-  {
-    avatar: "svg:avatar-3",
-    content: `发布了 <a>个人动态</a> `,
-    date: "1天前",
-    title: "克里斯",
-  },
-  {
-    avatar: "svg:avatar-4",
-    content: `发表文章 <a>如何编写一个Vite插件</a> `,
-    date: "2天前",
-    title: "Vben",
-  },
-  {
-    avatar: "svg:avatar-1",
-    content: `回复了 <a>杰克</a> 的问题 <a>如何进行项目优化？</a>`,
-    date: "3天前",
-    title: "皮特",
-  },
-  {
-    avatar: "svg:avatar-2",
-    content: `关闭了问题 <a>如何运行项目</a> `,
-    date: "1周前",
-    title: "杰克",
-  },
-  {
-    avatar: "svg:avatar-3",
-    content: `发布了 <a>个人动态</a> `,
-    date: "1周前",
-    title: "威廉",
-  },
-  {
-    avatar: "svg:avatar-4",
-    content: `推送了代码到 <a>Github</a>`,
-    date: "2021-04-01 20:00",
-    title: "威廉",
-  },
-  {
-    avatar: "svg:avatar-4",
-    content: `发表文章 <a>如何编写使用 Admin Vben</a> `,
-    date: "2021-03-01 20:00",
-    title: "Vben",
-  },
-];
 
 const router = useRouter();
 
@@ -259,13 +207,15 @@ function navTo(nav: WorkbenchProjectItem | WorkbenchQuickNavItem) {
     </WorkbenchHeader>
     <div class="mt-5 flex flex-col lg:flex-row">
       <div class="mr-4 w-full lg:w-3/5">
-        <WorkbenchProject :items="projectItems" title="项目" @click="navTo" />
-        <WorkbenchTrends :items="trendItems" class="mt-5" title="最新动态" />
+        <!-- <WorkbenchProject :items="projectItems" title="项目" @click="navTo" /> -->
+        <!-- <WorkbenchTrends :items="latestTasks" class="mt-5" title="最新任务" /> -->
+        <LatestTasks class="mt-5" title="最新任务" />
       </div>
 
       <div class="w-full lg:w-2/5">
         <WorkbenchQuickNav :items="quickNavItems" class="mt-5 lg:mt-0" title="快捷导航" @click="navTo" />
-        <WorkbenchTodo :items="todoItems" class="mt-5" title="待办事项" />
+        <!-- <WorkbenchTodo :items="todoItems" class="mt-5" title="待办事项" /> -->
+        <LatestFiles class="mt-5" title="最新文件" />
         <!-- <AnalysisChartCard class="mt-5" title="访问来源">
           <AnalyticsVisitsSource />
         </AnalysisChartCard> -->

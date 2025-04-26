@@ -25,16 +25,16 @@ const routes: RouteRecordRaw[] = [
           authority: [UserCode],
         },
       },
-      {
-        name: 'Analytics',
-        path: '/analytics',
-        component: () => import('#/views/dashboard/analytics/index.vue'),
-        meta: {
-          icon: 'lucide:area-chart',
-          title: $t('page.dashboard.analytics'),
-          authority: [UserCode],
-        },
-      },
+      // {
+      //   name: 'Analytics',
+      //   path: '/analytics',
+      //   component: () => import('#/views/dashboard/analytics/index.vue'),
+      //   meta: {
+      //     icon: 'lucide:area-chart',
+      //     title: $t('page.dashboard.analytics'),
+      //     authority: [UserCode],
+      //   },
+      // },
       {
         name: 'Overview',
         path: '/overview',

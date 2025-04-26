@@ -138,3 +138,18 @@ export const getTagType = (tag: string): 'success' | 'warning' | 'info' | 'dange
   };
   return types[tag];
 };
+
+export interface TaskTimeStatReq {
+  userId?: string; // 用户ID
+  statType?: 1 | 2 | 3; // 统计类型 1-按最近一个月统计 2-按最近一周统计 3-按三个月统计
+  date?: string; // 日期，格式：2006-01-02
+}
+
+export interface TaskTimeStat {
+  datetime?: string; // 时间
+  taskNum: number; // 任务数量
+}
+
+export interface TaskTimeStatResp {
+  list: TaskTimeStat[];
+}
