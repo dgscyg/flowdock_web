@@ -2,8 +2,8 @@
 export interface FileListReq {
   name?: string;          // 文件名称
   fileType?: string;      // 文件类型
-  status?: number;        // 状态 1-待处理 2-正在处理 3-已完成 4-已取消
-  storageUuid?: string;   // 存储源UUID
+  status?: number;        // 状态 1-待处理 2-正在处理 3-已完成 4-解析失败
+  storageUuid: string;    // 存储源UUID - 必填参数
   sortFields?: string[];  // 排序字段
 }
 
@@ -14,7 +14,7 @@ export interface File {
   path?: string;          // 文件路径
   size?: number;          // 文件大小
   fileType?: string;      // 文件类型
-  status?: number;        // 状态 1-待处理 2-正在处理 3-已完成 4-已取消
+  status?: number;        // 状态 1-待处理 2-正在处理 3-已完成 4-解析失败
   url?: string;           // 文件地址
   userId?: number;        // 创建者ID
   storageUuid?: string;   // 存储源UUID
@@ -47,4 +47,8 @@ export interface FileDetailReq {
 
 export interface FileDetailResp {
   file: File;
+}
+
+export interface FileDelReq {
+  uuid: string;           // 文件UUID
 }

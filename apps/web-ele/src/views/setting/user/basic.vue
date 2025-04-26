@@ -33,7 +33,7 @@
                 show-password
               />
             </ElFormItem>
-            <ElFormItem label="新密码" prop="newPassword">
+            <ElFormItem label="" v-if="passwordForm.newPassword">
               <div class="password-strength mb-2">
                 <div class="strength-bar-container">
                   <div class="strength-bar">
@@ -48,6 +48,8 @@
                   {{ passwordStrength.message }}
                 </div>
               </div>
+            </ElFormItem>
+            <ElFormItem label="新密码" prop="newPassword">
               <ElInput
                 v-model="passwordForm.newPassword"
                 type="password"
@@ -55,7 +57,7 @@
                 show-password
                 @input="checkPasswordStrength"
               />
-              <div class="password-requirements mt-2">
+              <div class="password-requirements mt-2" v-if="passwordForm.newPassword">
                 <div class="text-xs" :class="{'text-green-500': passwordForm.newPassword.length >= 8, 'text-red-500': passwordForm.newPassword && passwordForm.newPassword.length < 8}">
                   <ElIcon>
                     <component :is="passwordForm.newPassword.length >= 8 ? Check : Close" />

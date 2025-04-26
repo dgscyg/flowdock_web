@@ -1,5 +1,5 @@
 import { requestClient } from '#/api/request';
-import type { FileListReq, FileListResp, FileNewReq, FileNewResp, FileDetailResp } from '#/types/file';
+import type { FileListReq, FileListResp, FileNewReq, FileNewResp, FileDetailResp, FileDetailReq, FileDelReq } from '#/types/file';
 
 /**
  * 文件列表
@@ -19,12 +19,14 @@ export async function fileNewApi(data: FileNewReq): Promise<FileNewResp> {
  * 文件详情
  */
 export async function fileDetailApi(uuid: string): Promise<FileDetailResp> {
-  return requestClient.get<FileDetailResp>('/fabri/v1/file/detail', { params: { uuid } });
+  const params: FileDetailReq = { uuid };
+  return requestClient.get<FileDetailResp>('/fabri/v1/file/detail', { params });
 }
 
 /**
  * 文件删除
  */
 export async function fileDeleteApi(uuid: string): Promise<void> {
-  return requestClient.get('/fabri/v1/file/del', { params: { uuid } });
+  const params: FileDelReq = { uuid };
+  return requestClient.get('/fabri/v1/file/del', { params });
 } 
