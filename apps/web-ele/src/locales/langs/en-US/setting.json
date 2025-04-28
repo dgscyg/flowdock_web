@@ -10,5 +10,8 @@
   },
   "user": {
     "title": "User Settings"
+  },
+  "user-manager": {
+    "title": "User Manager"
   }
 }
