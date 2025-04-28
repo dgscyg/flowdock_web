@@ -117,6 +117,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.758.0",
     "@aws-sdk/lib-storage": "^3.758.0",
+    "@aws-sdk/s3-request-presigner": "^3.787.0",
     "@element-plus/icons-vue": "^2.3.1",
     "@highlightjs/cdn-assets": "^11.11.1",
     "@highlightjs/vue-plugin": "^2.1.0",

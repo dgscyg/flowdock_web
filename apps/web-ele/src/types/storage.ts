@@ -75,3 +75,13 @@ export const getEnableStatusTagType = (status: number): 'success' | 'warning' | 
   };
   return types[status] || 'info';
 };
+
+export interface OssCapacityResp {
+  totalCapacity: number; // 总容量(字节)
+  usedCapacity: number; // 已用容量(字节)
+  remainingCapacity: number; // 剩余容量(字节)
+  usedPercentage: number; // 使用率(%)
+  totalCapacityFormatted: string; // 总容量(格式化)
+  usedCapacityFormatted: string; // 已用容量(格式化)
+  remainingCapacityFormatted: string; // 剩余容量(格式化)
+}

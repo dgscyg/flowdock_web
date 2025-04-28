@@ -12,15 +12,15 @@ const routes: RouteRecordRaw[] = [
     name: 'System',
     path: '/system',
     children: [
-      {
-        name: 'SystemBasic',
-        path: '/system/basic',
-        component: () => import('#/views/setting/system/basic.vue'),
-        meta: {
-          icon: 'lucide:sliders-horizontal',
-          title: $t('setting.basic.title'),
-        },
-      },
+      // {
+      //   name: 'SystemBasic',
+      //   path: '/system/basic',
+      //   component: () => import('#/views/setting/system/basic.vue'),
+      //   meta: {
+      //     icon: 'lucide:sliders-horizontal',
+      //     title: $t('setting.basic.title'),
+      //   },
+      // },
       {
         name: 'SystemStorage',
         path: '/system/storage',
