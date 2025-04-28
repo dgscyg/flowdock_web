@@ -10,5 +10,8 @@
   },
   "user": {
     "title": "用户设置"
+  },
+  "user-manager": {
+    "title": "用户管理"
   }
 }
