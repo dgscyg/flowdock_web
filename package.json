@@ -115,9 +115,9 @@
     ]
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.758.0",
-    "@aws-sdk/lib-storage": "^3.758.0",
-    "@aws-sdk/s3-request-presigner": "^3.787.0",
+    "@aws-sdk/client-s3": "~3.400.0",
+    "@aws-sdk/lib-storage": "~3.400.0",
+    "@aws-sdk/s3-request-presigner": "~3.400.0",
     "@element-plus/icons-vue": "^2.3.1",
     "@highlightjs/cdn-assets": "^11.11.1",
     "@highlightjs/vue-plugin": "^2.1.0",
@@ -128,5 +128,17 @@
     "jsencrypt": "^3.3.2",
     "qweather-icons": "^1.6.0",
     "util": "^0.12.5"
+  },
+  "build": {
+    "commonjsOptions": {
+      "transformMixedEsModules": true
+    },
+    "rollupOptions": {
+      "plugins": [
+        "rollup-plugin-node-polyfills"
+      ],
+      "external": []
+    },
+    "chunkSizeWarningLimit": 2000
   }
 }
