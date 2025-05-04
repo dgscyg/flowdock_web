@@ -86,31 +86,71 @@ export class S3Uploader {
         type: file.type
       });
       
-      // 直接使用SDK上传
-      // 创建上传实例
-      const upload = new Upload({
-        client: this.s3Client,
-        params: {
+      // 使用直接的方式上传，避免AWS SDK打包后的Stream处理问题
+      try {
+        // 获取预签名PUT URL
+        const command = new PutObjectCommand({
           Bucket: this.config.Bucket,
           Key: key,
-          Body: file,
           ContentType: file.type
-        },
-      });
-      
-      // 添加进度处理
-      if (onProgress) {
-        upload.on('httpUploadProgress', (progress: any) => {
-          if (progress.loaded !== undefined && progress.total !== undefined) {
-            const percentage = Math.round((progress.loaded / progress.total) * 100);
-            onProgress(percentage);
+        });
+        
+        // 获取预签名URL用于PUT上传
+        // 使用类型断言解决AWS SDK版本兼容性问题
+        const signedUrl = await getSignedUrl(this.s3Client as any, command as any, { expiresIn: 3600 });
+        
+        // 使用fetch API直接上传
+        const response = await fetch(signedUrl, {
+          method: 'PUT',
+          body: file,
+          headers: {
+            'Content-Type': file.type
           }
         });
+        
+        if (!response.ok) {
+          throw new Error(`上传失败: ${response.status} ${response.statusText}`);
+        }
+        
+        // 上传成功通知进度
+        if (onProgress) {
+          onProgress(100);
+        }
+        
+        console.log('文件上传成功', response);
+      } catch (directUploadError) {
+        console.warn('直接上传失败，尝试通过命令上传:', directUploadError);
+        
+        // 备用方法：直接通过SDK上传小文件
+        // 避免使用Stream功能，直接将整个文件作为Uint8Array发送
+        await new Promise<void>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = async () => {
+            try {
+              const arrayBuffer = reader.result as ArrayBuffer;
+              // 将ArrayBuffer转换为Uint8Array
+              const uint8Array = new Uint8Array(arrayBuffer);
+              
+              const command = new PutObjectCommand({
+                Bucket: this.config.Bucket || '',
+                Key: key,
+                Body: uint8Array,
+                ContentType: file.type
+              });
+              
+              await this.s3Client.send(command);
+              if (onProgress) onProgress(100);
+              resolve();
+            } catch (error) {
+              reject(error);
+            }
+          };
+          reader.onerror = () => reject(reader.error);
+          reader.readAsArrayBuffer(file);
+        });
+        
+        console.log('使用PutObject+Uint8Array上传成功');
       }
-      
-      // 执行上传
-      const result = await upload.done();
-      console.log('文件上传成功', result);
       
       // 构建访问URL
       const url = this.buildUrlFromEndpoint(key);
