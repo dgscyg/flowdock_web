@@ -169,7 +169,7 @@
         <div class="tab-container" ref="tabContainer">
           <el-tabs v-model="activeTab" @tab-click="handleTabClick" type="card">
             <el-tab-pane name="list" label="数据列表"></el-tab-pane>
-            <!-- <el-tab-pane name="chart" label="图表分析"></el-tab-pane> -->
+            <el-tab-pane name="chart" label="图表分析"></el-tab-pane>
             <el-tab-pane name="source" label="源数据"></el-tab-pane>
           </el-tabs>
         </div>

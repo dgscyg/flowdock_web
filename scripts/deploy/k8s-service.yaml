@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: flowdock-front-dev-svc
+spec:
+  selector:
+    app: flowdock-front-dev
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000 

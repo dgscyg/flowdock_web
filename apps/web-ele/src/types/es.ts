@@ -310,3 +310,72 @@ export type FileInfoEsListResp = {
   list?: PacketData[];
   total: number;
 };
+
+// 图表相关类型定义
+
+// 时间轴请求参数
+export interface TimelineChartRequest {
+  taskId?: string;       // 任务ID
+  fileId?: string;       // 文件ID
+  fileUuid?: string;     // 文件UUID
+  startTime?: number;    // 起始时间戳(毫秒)
+  endTime?: number;      // 结束时间戳(毫秒)
+  interval?: string;     // 时间间隔，如"1s", "1m", "1h"
+  chartType: string;     // 图表类型: packets(数据包数量), statusCode(状态码), responseTime(响应时间)
+  filter?: string;       // 从云图跳转的过滤条件，格式为 "field:value"，如 "url:/api/users"
+  statusType?: string;   // 当chartType为statusCode时，可指定具体状态类型: 2xx, 3xx, 4xx, 5xx, all
+}
+
+// 数据点
+export interface TimelinePoint {
+  timestamp: number;     // 时间戳
+  category: string;      // 类别（如状态码类别、协议等）
+  count: number;         // 数据包数量/计数
+  value: number;         // 数值（如响应时间平均值，单位毫秒）
+}
+
+// 时间序列
+export interface TimelineSeries {
+  name: string;                    // 系列名称
+  data: TimelinePoint[];           // 数据点
+}
+
+// 时间轴响应数据
+export interface TimelineChartResponse {
+  series: TimelineSeries[];        // 时间序列数据
+  xAxis: string[];                 // X轴数据（时间标签）
+}
+
+// 云图请求参数
+export interface CloudChartRequest {
+  taskId?: string;       // 任务ID
+  fileId?: string;       // 文件ID
+  fileUuid?: string;     // 文件UUID
+  chartType: string;     // 图表类型: url, path, method, domain, statusCode, contentType
+  limit?: number;        // 返回数据限制
+  startTime?: number;    // 起始时间戳(毫秒)
+  endTime?: number;      // 结束时间戳(毫秒)
+  filter?: string;       // 过滤条件，格式为 "field:value"
+}
+
+// 云图数据项
+export interface CloudChartItem {
+  name: string;          // 名称
+  value: number;         // 计数值
+  extra?: string;        // 额外信息，如完整URL、状态描述等
+}
+
+// 云图响应数据
+export interface CloudChartResponse {
+  data: CloudChartItem[];          // 云图数据
+  type: string;                    // 数据类型（同请求的chartType）
+}
+
+// 为了向后兼容，提供类型别名
+export type TimelineHarRequest = TimelineChartRequest;
+export type TimelineHarResponse = TimelineChartResponse;
+export type TimelineHarPoint = TimelinePoint;
+export type TimelineHarSeries = TimelineSeries;
+export type CloudChartHarRequest = CloudChartRequest;
+export type CloudChartHarResponse = CloudChartResponse;
+export type CloudChartHarItem = CloudChartItem;

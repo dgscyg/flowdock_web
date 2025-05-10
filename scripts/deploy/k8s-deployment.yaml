@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flowdock-front-dev
+  labels:
+    app: flowdock-front-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: flowdock-front-dev
+  template:
+    metadata:
+      labels:
+        app: flowdock-front-dev
+    spec:
+      containers:
+        - name: flowdock-front-dev
+          image: flowdock-front-dev:latest  # 注意：该镜像尚未构建
+          command: ["pnpm"]
+          args: ["-F", "@vben/web-ele", "run", "dev"]
+          ports:
+            - containerPort: 3000 
